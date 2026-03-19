@@ -10,43 +10,29 @@ struct CalendarHeaderView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Month navigation + toggle
+            // Month navigation
             HStack {
                 Button { moveMonth(-1) } label: {
                     Image(systemName: "chevron.left")
-                        .foregroundStyle(.white)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
 
                 Spacer()
 
-                HStack(spacing: 4) {
-                    Button { moveMonth(-1) } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                    Text(DateHelper.monthString(displayedMonth))
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                    Button { moveMonth(1) } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                }
+                Text(DateHelper.monthString(displayedMonth))
+                    .font(.headline)
+                    .foregroundStyle(.white)
 
                 Spacer()
 
-                Button {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        isExpanded.toggle()
-                    }
-                } label: {
-                    Image(systemName: isExpanded ? "calendar.badge.minus" : "calendar.badge.plus")
-                        .foregroundStyle(.white)
+                Button { moveMonth(1) } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.8))
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 20)
             .padding(.top, 12)
             .padding(.bottom, 8)
 
@@ -82,9 +68,10 @@ struct CalendarHeaderView: View {
                     isExpanded.toggle()
                 }
             } label: {
-                Image(systemName: isExpanded ? "chevron.compact.up" : "chevron.compact.down")
+                Image(systemName: "chevron.compact.down")
                     .font(.title3)
                     .foregroundStyle(.white.opacity(0.5))
+                    .rotationEffect(.degrees(isExpanded ? -180 : 0))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
             }

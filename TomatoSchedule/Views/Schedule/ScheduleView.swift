@@ -1,13 +1,20 @@
 import SwiftUI
 import SwiftData
 
+private struct ScrollOffsetKey: PreferenceKey {
+    nonisolated static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct ScheduleView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allLessons: [Lesson]
 
     @State private var selectedDate: Date = .now
     @State private var displayedMonth: Date = .now
-    @State private var isExpanded: Bool = false
+    @State private var isExpanded: Bool = true
     @State private var showingAddLesson: Bool = false
     @State private var editingLesson: Lesson?
 
@@ -80,11 +87,35 @@ struct ScheduleView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
+                            // Invisible tracker for scroll offset
+                            Color.clear
+                                .frame(height: 0)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.preference(
+                                            key: ScrollOffsetKey.self,
+                                            value: geo.frame(in: .named("lessonScroll")).minY
+                                        )
+                                    }
+                                )
+
                             ForEach(lessonsForSelectedDate) { lesson in
                                 LessonTimeGroup(lesson: lesson) {
                                     editingLesson = lesson
                                 }
-                                Divider().padding(.leading, 52)
+                                Divider().padding(.leading, 16)
+                            }
+                        }
+                    }
+                    .coordinateSpace(name: "lessonScroll")
+                    .onPreferenceChange(ScrollOffsetKey.self) { offset in
+                        if offset < -30 && isExpanded {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                isExpanded = false
+                            }
+                        } else if offset >= -5 && !isExpanded {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                isExpanded = true
                             }
                         }
                     }

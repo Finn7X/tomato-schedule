@@ -3,77 +3,70 @@ import SwiftUI
 struct LessonDetailCard: View {
     let lesson: Lesson
 
+    private var courseColor: Color {
+        PresetColors.color(for: lesson.course?.colorHex ?? "#78909C")
+    }
+
     var body: some View {
         HStack(spacing: 0) {
-            // Color bar
             RoundedRectangle(cornerRadius: 2)
-                .fill(PresetColors.color(for: lesson.course?.colorHex ?? "#78909C"))
+                .fill(courseColor)
                 .frame(width: 4)
 
-            VStack(alignment: .leading, spacing: 6) {
-                // Course name
+            VStack(alignment: .leading, spacing: 4) {
                 Text(lesson.course?.name ?? "未知课程")
-                    .font(.body)
-                    .fontWeight(.bold)
-                    .lineLimit(2)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
 
-                // Badges: subject + hours progress
-                let subject = lesson.course?.subject ?? ""
-                let progress = lesson.course?.hoursProgressText
-
-                if !subject.isEmpty || progress != nil {
-                    HStack(spacing: 6) {
-                        if !subject.isEmpty {
-                            Text(subject)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(Color(red: 0.96, green: 0.78, blue: 0.26)))
-                                .foregroundStyle(.black.opacity(0.8))
-                        }
-
-                        if let progress {
-                            Text(progress)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.orange))
-                                .foregroundStyle(.white)
-                        }
+                // Time + student
+                HStack(spacing: 0) {
+                    Text(lesson.timeRangeText)
+                    if !lesson.studentName.isEmpty {
+                        Text(" · \(lesson.studentName)")
                     }
                 }
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-                // Student
-                if !lesson.studentName.isEmpty {
-                    HStack(spacing: 4) {
-                        Text("学 生：")
-                            .foregroundStyle(.secondary)
-                        Text(lesson.studentName)
-                    }
-                    .font(.subheadline)
+                // Subject + progress (only if data exists)
+                let parts = progressParts
+                if !parts.isEmpty {
+                    Text(parts.joined(separator: " · "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 // Location
                 if !lesson.location.isEmpty {
-                    Label(lesson.location, systemImage: "mappin.circle")
+                    Text(lesson.location)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+
+            Spacer(minLength: 0)
         }
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(.background)
-                .shadow(color: .black.opacity(0.08), radius: 2, y: 1)
+                .fill(courseColor.opacity(0.08))
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 0.5)
-        )
+    }
+
+    private var progressParts: [String] {
+        var parts: [String] = []
+        if let subject = lesson.course?.subject, !subject.isEmpty {
+            parts.append(subject)
+        }
+        if let progress = lesson.course?.hoursProgressText {
+            parts.append(progress)
+        }
+        if let seq = lesson.headerSequenceText {
+            parts.append(seq)
+        }
+        return parts
     }
 }
