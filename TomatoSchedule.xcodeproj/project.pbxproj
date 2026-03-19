@@ -31,7 +31,7 @@
 		1F09533DA20CF516C219F56C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		27F63A83468F9B4D971B82B2 /* LessonCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonCardView.swift; sourceTree = "<group>"; };
 		2F7BF114D99FD5363F966ADB /* PresetColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetColors.swift; sourceTree = "<group>"; };
-		5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TomatoSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomatoSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		657A9684EEA6B67AE1427B64 /* TomatoScheduleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomatoScheduleApp.swift; sourceTree = "<group>"; };
 		6757FAB390FA1FB5AA6AECCF /* CourseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseListView.swift; sourceTree = "<group>"; };
 		7359B07F3464A429E21DD2DD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -45,6 +45,14 @@
 		C8D84A988E7CCB7511005207 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
 		D4402879585B36E50709B62D /* DateHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		9E2D1B1E2F6C5539006EA5A1 /* example */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = example;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXGroup section */
 		2B04B2FE38123C7FCD5B9B0D /* Products */ = {
@@ -141,6 +149,7 @@
 		FF4BC8EBDB9E54F652ACE730 /* TomatoSchedule */ = {
 			isa = PBXGroup;
 			children = (
+				9E2D1B1E2F6C5539006EA5A1 /* example */,
 				C257B6E39221631647C47A59 /* Assets.xcassets */,
 				7359B07F3464A429E21DD2DD /* Info.plist */,
 				E738608BFB7D546241FA5D84 /* App */,
@@ -165,6 +174,9 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				9E2D1B1E2F6C5539006EA5A1 /* example */,
+			);
 			name = TomatoSchedule;
 			packageProductDependencies = (
 			);
@@ -180,8 +192,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 20989C42118DC6D25925DCF2 /* Build configuration list for PBXProject "TomatoSchedule" */;
 			developmentRegion = "zh-Hans";
@@ -371,6 +381,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 43VTJBA3MV;
 				INFOPLIST_FILE = TomatoSchedule/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "番茄课表";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -393,6 +404,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 43VTJBA3MV;
 				INFOPLIST_FILE = TomatoSchedule/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "番茄课表";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
