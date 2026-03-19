@@ -1,13 +1,6 @@
 import SwiftUI
 import SwiftData
 
-private struct ScrollOffsetKey: PreferenceKey {
-    nonisolated static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 struct ScheduleView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allLessons: [Lesson]
@@ -17,8 +10,6 @@ struct ScheduleView: View {
     @State private var isExpanded: Bool = true
     @State private var showingAddLesson: Bool = false
     @State private var editingLesson: Lesson?
-    @State private var scrollTrackingEnabled: Bool = false
-    @State private var previousOffset: CGFloat = 0
 
     // MARK: - Computed
 
@@ -77,7 +68,6 @@ struct ScheduleView: View {
 
                 Divider()
 
-                // Lesson list
                 if lessonsForSelectedDate.isEmpty {
                     Spacer()
                     EmptyStateView(
@@ -87,7 +77,7 @@ struct ScheduleView: View {
                     )
                     Spacer()
                 } else {
-                    lessonScrollView
+                    lessonList
                 }
             }
             .navigationTitle("课表")
@@ -115,56 +105,44 @@ struct ScheduleView: View {
         }
     }
 
-    // MARK: - Lesson scroll with calendar tracking
+    // MARK: - Lesson List
 
-    private var lessonScrollView: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(lessonsForSelectedDate) { lesson in
-                    LessonTimeGroup(lesson: lesson) {
-                        editingLesson = lesson
+    private var lessonList: some View {
+        List {
+            ForEach(lessonsForSelectedDate) { lesson in
+                LessonTimeGroup(lesson: lesson) {
+                    editingLesson = lesson
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        withAnimation { modelContext.delete(lesson) }
+                    } label: {
+                        Label("删除", systemImage: "trash")
                     }
-                    Divider().padding(.leading, 16)
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    Button {
+                        withAnimation { lesson.isCompleted.toggle() }
+                    } label: {
+                        Label(
+                            lesson.isCompleted ? "取消" : "完成",
+                            systemImage: lesson.isCompleted ? "arrow.uturn.backward" : "checkmark"
+                        )
+                    }
+                    .tint(lesson.isCompleted ? .orange : .green)
                 }
             }
-            .background(
-                GeometryReader { geo in
-                    Color.clear.preference(
-                        key: ScrollOffsetKey.self,
-                        value: geo.frame(in: .named("lessonScroll")).minY
-                    )
-                }
-            )
         }
-        .coordinateSpace(name: "lessonScroll")
-        .onPreferenceChange(ScrollOffsetKey.self) { offset in
-            handleScroll(offset)
-        }
-        .task {
-            // Ignore initial layout frames — enable tracking after settle
-            try? await Task.sleep(for: .milliseconds(600))
-            scrollTrackingEnabled = true
-        }
-    }
-
-    private func handleScroll(_ offset: CGFloat) {
-        guard scrollTrackingEnabled else { return }
-
-        let delta = offset - previousOffset
-        previousOffset = offset
-
-        // Scrolling down (finger moving up, offset decreasing, delta < 0)
-        // → collapse calendar to give more room
-        if delta < -8 && isExpanded && offset < -20 {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isExpanded = false
-            }
-        }
-
-        // Scrolled back to top (offset near 0) → expand calendar
-        if offset > -10 && !isExpanded {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isExpanded = true
+        .listStyle(.plain)
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentOffset.y
+        } action: { _, newValue in
+            if newValue > 40 && isExpanded {
+                withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
+            } else if newValue < 10 && !isExpanded {
+                withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
             }
         }
     }

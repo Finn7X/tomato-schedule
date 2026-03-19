@@ -14,10 +14,17 @@ struct LessonDetailCard: View {
                 .frame(width: 4)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(lesson.course?.name ?? "未知课程")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(lesson.course?.name ?? "未知课程")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                    if lesson.isCompleted {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
+                }
 
                 // Time + student
                 HStack(spacing: 0) {
