@@ -1,0 +1,437 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		07A838E7AF316C4DB7161BDE /* CourseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6757FAB390FA1FB5AA6AECCF /* CourseListView.swift */; };
+		0F180B9CA2E61AB9D06C69E9 /* TomatoScheduleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 657A9684EEA6B67AE1427B64 /* TomatoScheduleApp.swift */; };
+		112DECAA64EB4AB9A9755A06 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F09533DA20CF516C219F56C /* MainTabView.swift */; };
+		1EF2DEE3E570730EE7CEBC85 /* DateHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4402879585B36E50709B62D /* DateHelper.swift */; };
+		27C564EB630721F0C63ACDBB /* LessonFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987066EFD50D2D16BA581271 /* LessonFormView.swift */; };
+		293ADC83FB4A55D8BCEBA033 /* MonthScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9740AD4FCC01A2BF3A16295F /* MonthScheduleView.swift */; };
+		46074D0AC974525BF9ED4191 /* PresetColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7BF114D99FD5363F966ADB /* PresetColors.swift */; };
+		53ECFDE566A52B497EC1F3E9 /* Lesson.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79354EC748159A97C2DBEAE8 /* Lesson.swift */; };
+		62FACCF201DB66E5D0AE89D2 /* DayScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9389729DB8D93001C3A24718 /* DayScheduleView.swift */; };
+		7688F2914682936F15F9C723 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C257B6E39221631647C47A59 /* Assets.xcassets */; };
+		8F179393D84252A8386B1B4A /* WeekScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11AA0C47F53399941CA139D /* WeekScheduleView.swift */; };
+		937CBA23E5291F14BE67B3F0 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D84A988E7CCB7511005207 /* Course.swift */; };
+		A3D0AA5F0105C79FF15B9D6F /* CourseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC7F23237E7A0E7EE5597D2 /* CourseFormView.swift */; };
+		BA09EC497413825C98EFDFD5 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A8E304C56DC0B4A04446273 /* EmptyStateView.swift */; };
+		BBE8487ADA147A42505A4E1B /* LessonCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27F63A83468F9B4D971B82B2 /* LessonCardView.swift */; };
+		E1D5E5462D671D28FC7E4FDB /* ColorPickerGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DAF408A1977734575226C3 /* ColorPickerGrid.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0A8E304C56DC0B4A04446273 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		14DAF408A1977734575226C3 /* ColorPickerGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerGrid.swift; sourceTree = "<group>"; };
+		1F09533DA20CF516C219F56C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		27F63A83468F9B4D971B82B2 /* LessonCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonCardView.swift; sourceTree = "<group>"; };
+		2F7BF114D99FD5363F966ADB /* PresetColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetColors.swift; sourceTree = "<group>"; };
+		5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TomatoSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		657A9684EEA6B67AE1427B64 /* TomatoScheduleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomatoScheduleApp.swift; sourceTree = "<group>"; };
+		6757FAB390FA1FB5AA6AECCF /* CourseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseListView.swift; sourceTree = "<group>"; };
+		7359B07F3464A429E21DD2DD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		79354EC748159A97C2DBEAE8 /* Lesson.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lesson.swift; sourceTree = "<group>"; };
+		7DC7F23237E7A0E7EE5597D2 /* CourseFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseFormView.swift; sourceTree = "<group>"; };
+		9389729DB8D93001C3A24718 /* DayScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayScheduleView.swift; sourceTree = "<group>"; };
+		9740AD4FCC01A2BF3A16295F /* MonthScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthScheduleView.swift; sourceTree = "<group>"; };
+		987066EFD50D2D16BA581271 /* LessonFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonFormView.swift; sourceTree = "<group>"; };
+		A11AA0C47F53399941CA139D /* WeekScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekScheduleView.swift; sourceTree = "<group>"; };
+		C257B6E39221631647C47A59 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C8D84A988E7CCB7511005207 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
+		D4402879585B36E50709B62D /* DateHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateHelper.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2B04B2FE38123C7FCD5B9B0D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4CC6C63017D689CF3E42887F /* Lesson */ = {
+			isa = PBXGroup;
+			children = (
+				27F63A83468F9B4D971B82B2 /* LessonCardView.swift */,
+				987066EFD50D2D16BA581271 /* LessonFormView.swift */,
+			);
+			path = Lesson;
+			sourceTree = "<group>";
+		};
+		551C1B3C074CB5322D4F9062 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				D4402879585B36E50709B62D /* DateHelper.swift */,
+				2F7BF114D99FD5363F966ADB /* PresetColors.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		5E3BCC4576AFFF038AC42B62 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1F09533DA20CF516C219F56C /* MainTabView.swift */,
+				D91AD706EC3FF4CDD30AEBE0 /* Calendar */,
+				CCE0C66817B8B99CE3A91046 /* Components */,
+				DE75F7DC3C3CFADBA14E6ED9 /* Course */,
+				4CC6C63017D689CF3E42887F /* Lesson */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A7414021B815E283F9B589DB /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C8D84A988E7CCB7511005207 /* Course.swift */,
+				79354EC748159A97C2DBEAE8 /* Lesson.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CCE0C66817B8B99CE3A91046 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				14DAF408A1977734575226C3 /* ColorPickerGrid.swift */,
+				0A8E304C56DC0B4A04446273 /* EmptyStateView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		D91AD706EC3FF4CDD30AEBE0 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				9389729DB8D93001C3A24718 /* DayScheduleView.swift */,
+				9740AD4FCC01A2BF3A16295F /* MonthScheduleView.swift */,
+				A11AA0C47F53399941CA139D /* WeekScheduleView.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		DE75F7DC3C3CFADBA14E6ED9 /* Course */ = {
+			isa = PBXGroup;
+			children = (
+				7DC7F23237E7A0E7EE5597D2 /* CourseFormView.swift */,
+				6757FAB390FA1FB5AA6AECCF /* CourseListView.swift */,
+			);
+			path = Course;
+			sourceTree = "<group>";
+		};
+		E738608BFB7D546241FA5D84 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				657A9684EEA6B67AE1427B64 /* TomatoScheduleApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		EE04B93DB9934D500AA61D24 = {
+			isa = PBXGroup;
+			children = (
+				FF4BC8EBDB9E54F652ACE730 /* TomatoSchedule */,
+				2B04B2FE38123C7FCD5B9B0D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FF4BC8EBDB9E54F652ACE730 /* TomatoSchedule */ = {
+			isa = PBXGroup;
+			children = (
+				C257B6E39221631647C47A59 /* Assets.xcassets */,
+				7359B07F3464A429E21DD2DD /* Info.plist */,
+				E738608BFB7D546241FA5D84 /* App */,
+				551C1B3C074CB5322D4F9062 /* Helpers */,
+				A7414021B815E283F9B589DB /* Models */,
+				5E3BCC4576AFFF038AC42B62 /* Views */,
+			);
+			path = TomatoSchedule;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2FE146C05D4D8744E5DAFE24 /* TomatoSchedule */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2839B85AE84E5145B498F5AB /* Build configuration list for PBXNativeTarget "TomatoSchedule" */;
+			buildPhases = (
+				0EFE228CF645798926CF6A3B /* Sources */,
+				B214834ED5B4D801073F2BDC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TomatoSchedule;
+			packageProductDependencies = (
+			);
+			productName = TomatoSchedule;
+			productReference = 5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A7934C606B790F68F9A9956A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 20989C42118DC6D25925DCF2 /* Build configuration list for PBXProject "TomatoSchedule" */;
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				"zh-Hans",
+			);
+			mainGroup = EE04B93DB9934D500AA61D24;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2B04B2FE38123C7FCD5B9B0D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2FE146C05D4D8744E5DAFE24 /* TomatoSchedule */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B214834ED5B4D801073F2BDC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7688F2914682936F15F9C723 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0EFE228CF645798926CF6A3B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1D5E5462D671D28FC7E4FDB /* ColorPickerGrid.swift in Sources */,
+				937CBA23E5291F14BE67B3F0 /* Course.swift in Sources */,
+				A3D0AA5F0105C79FF15B9D6F /* CourseFormView.swift in Sources */,
+				07A838E7AF316C4DB7161BDE /* CourseListView.swift in Sources */,
+				1EF2DEE3E570730EE7CEBC85 /* DateHelper.swift in Sources */,
+				62FACCF201DB66E5D0AE89D2 /* DayScheduleView.swift in Sources */,
+				BA09EC497413825C98EFDFD5 /* EmptyStateView.swift in Sources */,
+				53ECFDE566A52B497EC1F3E9 /* Lesson.swift in Sources */,
+				BBE8487ADA147A42505A4E1B /* LessonCardView.swift in Sources */,
+				27C564EB630721F0C63ACDBB /* LessonFormView.swift in Sources */,
+				112DECAA64EB4AB9A9755A06 /* MainTabView.swift in Sources */,
+				293ADC83FB4A55D8BCEBA033 /* MonthScheduleView.swift in Sources */,
+				46074D0AC974525BF9ED4191 /* PresetColors.swift in Sources */,
+				0F180B9CA2E61AB9D06C69E9 /* TomatoScheduleApp.swift in Sources */,
+				8F179393D84252A8386B1B4A /* WeekScheduleView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		BC2AA73C05E6D31306F0F05E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TomatoSchedule/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		BDB042C90B0B89734603A5E6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TomatoSchedule/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		D347B076FC10D693EA29802F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = TomatoSchedule/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "番茄课表";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.xujifeng.TomatoSchedule;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D800D5A1ADA21565B91BE996 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = TomatoSchedule/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "番茄课表";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.xujifeng.TomatoSchedule;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		20989C42118DC6D25925DCF2 /* Build configuration list for PBXProject "TomatoSchedule" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BDB042C90B0B89734603A5E6 /* Debug */,
+				BC2AA73C05E6D31306F0F05E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2839B85AE84E5145B498F5AB /* Build configuration list for PBXNativeTarget "TomatoSchedule" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D800D5A1ADA21565B91BE996 /* Debug */,
+				D347B076FC10D693EA29802F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A7934C606B790F68F9A9956A /* Project object */;
+}

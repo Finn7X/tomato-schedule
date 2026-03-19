@@ -1,0 +1,69 @@
+import SwiftUI
+import SwiftData
+
+struct CourseFormView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    let course: Course?
+
+    @State private var name: String = ""
+    @State private var colorHex: String = "#FF6B6B"
+    @State private var notes: String = ""
+
+    var isEditing: Bool { course != nil }
+
+    init(course: Course? = nil) {
+        self.course = course
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("课程名称") {
+                    TextField("例如：钢琴课、数学辅导", text: $name)
+                }
+
+                Section("课程颜色") {
+                    ColorPickerGrid(selectedHex: $colorHex)
+                }
+
+                Section("备注") {
+                    TextField("可选备注信息", text: $notes, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+            }
+            .navigationTitle(isEditing ? "编辑课程" : "新建课程")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { save() }
+                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .onAppear {
+                if let course {
+                    name = course.name
+                    colorHex = course.colorHex
+                    notes = course.notes
+                }
+            }
+        }
+    }
+
+    private func save() {
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        if let course {
+            course.name = trimmedName
+            course.colorHex = colorHex
+            course.notes = notes
+        } else {
+            let newCourse = Course(name: trimmedName, colorHex: colorHex, notes: notes)
+            modelContext.insert(newCourse)
+        }
+        dismiss()
+    }
+}
