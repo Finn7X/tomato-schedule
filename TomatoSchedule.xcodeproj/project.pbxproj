@@ -39,19 +39,19 @@
 		14DAF408A1977734575226C3 /* ColorPickerGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerGrid.swift; sourceTree = "<group>"; };
 		1F09533DA20CF516C219F56C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		21806539C7A79CC2748A4B2E /* CalendarHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarHeaderView.swift; sourceTree = "<group>"; };
-		28CEC0D7A3CC4C2498C38E3D /* 7424f0f07240fd43e9c8c7a3dd272de4.JPG */ = {isa = PBXFileReference; path = 7424f0f07240fd43e9c8c7a3dd272de4.JPG; sourceTree = "<group>"; };
+		28CEC0D7A3CC4C2498C38E3D /* 7424f0f07240fd43e9c8c7a3dd272de4.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 7424f0f07240fd43e9c8c7a3dd272de4.JPG; sourceTree = "<group>"; };
 		2F7BF114D99FD5363F966ADB /* PresetColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetColors.swift; sourceTree = "<group>"; };
-		5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TomatoSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomatoSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		657A9684EEA6B67AE1427B64 /* TomatoScheduleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TomatoScheduleApp.swift; sourceTree = "<group>"; };
 		6757FAB390FA1FB5AA6AECCF /* CourseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseListView.swift; sourceTree = "<group>"; };
 		73065D6574BEE69F993699B2 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
 		7359B07F3464A429E21DD2DD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		782DB213CFCD6D3B4180430F /* 365bbb518e36d0d74df2992bff44b83c.JPG */ = {isa = PBXFileReference; path = 365bbb518e36d0d74df2992bff44b83c.JPG; sourceTree = "<group>"; };
+		782DB213CFCD6D3B4180430F /* 365bbb518e36d0d74df2992bff44b83c.JPG */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = 365bbb518e36d0d74df2992bff44b83c.JPG; sourceTree = "<group>"; };
 		79354EC748159A97C2DBEAE8 /* Lesson.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lesson.swift; sourceTree = "<group>"; };
 		7DC7F23237E7A0E7EE5597D2 /* CourseFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseFormView.swift; sourceTree = "<group>"; };
 		80336A87D0249A088661554C /* LessonDetailCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonDetailCard.swift; sourceTree = "<group>"; };
 		987066EFD50D2D16BA581271 /* LessonFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonFormView.swift; sourceTree = "<group>"; };
-		A0D007F538F5C43E99F1DD2C /* IMG_8444.PNG */ = {isa = PBXFileReference; path = IMG_8444.PNG; sourceTree = "<group>"; };
+		A0D007F538F5C43E99F1DD2C /* IMG_8444.PNG */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IMG_8444.PNG; sourceTree = "<group>"; };
 		A10BD1DD93C095F1729C4716 /* StatisticsBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsBar.swift; sourceTree = "<group>"; };
 		C257B6E39221631647C47A59 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C8D84A988E7CCB7511005207 /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
@@ -209,8 +209,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 20989C42118DC6D25925DCF2 /* Build configuration list for PBXProject "TomatoSchedule" */;
 			developmentRegion = "zh-Hans";
@@ -407,6 +405,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 43VTJBA3MV;
 				INFOPLIST_FILE = TomatoSchedule/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "番茄课表";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -429,6 +428,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 43VTJBA3MV;
 				INFOPLIST_FILE = TomatoSchedule/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "番茄课表";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

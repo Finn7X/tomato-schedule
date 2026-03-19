@@ -113,22 +113,21 @@ struct ScheduleView: View {
                 LessonTimeGroup(lesson: lesson) {
                     editingLesson = lesson
                 }
-                .listRowInsets(EdgeInsets())
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
                         withAnimation { modelContext.delete(lesson) }
                     } label: {
                         Label("删除", systemImage: "trash")
                     }
-                }
-                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+
                     Button {
                         withAnimation { lesson.isCompleted.toggle() }
                     } label: {
                         Label(
-                            lesson.isCompleted ? "取消" : "完成",
-                            systemImage: lesson.isCompleted ? "arrow.uturn.backward" : "checkmark"
+                            lesson.isCompleted ? "取消完成" : "完成",
+                            systemImage: lesson.isCompleted ? "arrow.uturn.backward.circle" : "checkmark.circle"
                         )
                     }
                     .tint(lesson.isCompleted ? .orange : .green)
