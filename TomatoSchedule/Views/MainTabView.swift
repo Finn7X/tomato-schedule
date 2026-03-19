@@ -3,19 +3,9 @@ import SwiftUI
 struct MainTabView: View {
     var body: some View {
         TabView {
-            DayScheduleView()
+            ScheduleView()
                 .tabItem {
-                    Label("日", systemImage: "sun.max")
-                }
-
-            WeekScheduleView()
-                .tabItem {
-                    Label("周", systemImage: "calendar.day.timeline.left")
-                }
-
-            MonthScheduleView()
-                .tabItem {
-                    Label("月", systemImage: "calendar")
+                    Label("课表", systemImage: "calendar")
                 }
 
             CourseListView()

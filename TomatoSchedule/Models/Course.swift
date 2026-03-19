@@ -12,12 +12,42 @@ final class Course {
     @Relationship(deleteRule: .cascade, inverse: \Lesson.course)
     var lessons: [Lesson]
 
-    init(name: String, colorHex: String = "#FF6B6B", notes: String = "") {
+    // V2 新增
+    var subject: String
+    var totalHours: Double
+    var totalLessons: Int
+
+    init(
+        name: String,
+        colorHex: String = "#FF6B6B",
+        notes: String = "",
+        subject: String = "",
+        totalHours: Double = 0,
+        totalLessons: Int = 0
+    ) {
         self.id = UUID()
         self.name = name
         self.colorHex = colorHex
         self.notes = notes
         self.createdAt = Date()
         self.lessons = []
+        self.subject = subject
+        self.totalHours = totalHours
+        self.totalLessons = totalLessons
+    }
+
+    // 累计层
+    var completedLessons: [Lesson] {
+        lessons.filter { $0.isCompleted }
+    }
+
+    var completedHours: Double {
+        completedLessons.reduce(0.0) { $0 + Double($1.durationMinutes) / 60.0 }
+    }
+
+    /// 卡片内累计进度 badge："4.0/10.0h"
+    var hoursProgressText: String? {
+        guard totalHours > 0 else { return nil }
+        return String(format: "%.1f/%.1fh", completedHours, totalHours)
     }
 }

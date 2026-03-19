@@ -14,6 +14,9 @@ struct LessonFormView: View {
     @State private var date: Date
     @State private var startTime: Date
     @State private var endTime: Date
+    @State private var lessonNumber: Int = 0
+    @State private var isCompleted: Bool = false
+    @State private var location: String = ""
     @State private var notes: String = ""
 
     var isEditing: Bool { lesson != nil }
@@ -64,6 +67,26 @@ struct LessonFormView: View {
                     DatePicker("结束时间", selection: $endTime, displayedComponents: .hourAndMinute)
                 }
 
+                Section("课时信息") {
+                    HStack {
+                        Text("第几节课")
+                        Spacer()
+                        TextField("节次", value: $lessonNumber, format: .number)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
+                        if let total = selectedCourse?.totalLessons, total > 0 {
+                            Text("/ \(total)")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Toggle("已完成", isOn: $isCompleted)
+                }
+
+                Section("上课地点") {
+                    TextField("例如：3楼教室、学生家中", text: $location)
+                }
+
                 Section("备注") {
                     TextField("可选备注", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
@@ -104,6 +127,9 @@ struct LessonFormView: View {
                     date = lesson.date
                     startTime = lesson.startTime
                     endTime = lesson.endTime
+                    lessonNumber = lesson.lessonNumber
+                    isCompleted = lesson.isCompleted
+                    location = lesson.location
                     notes = lesson.notes
                 }
             }
@@ -122,6 +148,9 @@ struct LessonFormView: View {
             lesson.date = DateHelper.startOfDay(date)
             lesson.startTime = actualStart
             lesson.endTime = actualEnd
+            lesson.lessonNumber = lessonNumber
+            lesson.isCompleted = isCompleted
+            lesson.location = location.trimmingCharacters(in: .whitespaces)
             lesson.notes = notes
         } else {
             let newLesson = Lesson(
@@ -130,7 +159,10 @@ struct LessonFormView: View {
                 date: DateHelper.startOfDay(date),
                 startTime: actualStart,
                 endTime: actualEnd,
-                notes: notes
+                notes: notes,
+                lessonNumber: lessonNumber,
+                isCompleted: isCompleted,
+                location: location.trimmingCharacters(in: .whitespaces)
             )
             modelContext.insert(newLesson)
         }
