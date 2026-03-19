@@ -17,6 +17,8 @@ struct ScheduleView: View {
     @State private var isExpanded: Bool = true
     @State private var showingAddLesson: Bool = false
     @State private var editingLesson: Lesson?
+    @State private var scrollTrackingEnabled: Bool = false
+    @State private var previousOffset: CGFloat = 0
 
     // MARK: - Computed
 
@@ -85,40 +87,7 @@ struct ScheduleView: View {
                     )
                     Spacer()
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            // Invisible tracker for scroll offset
-                            Color.clear
-                                .frame(height: 0)
-                                .background(
-                                    GeometryReader { geo in
-                                        Color.clear.preference(
-                                            key: ScrollOffsetKey.self,
-                                            value: geo.frame(in: .named("lessonScroll")).minY
-                                        )
-                                    }
-                                )
-
-                            ForEach(lessonsForSelectedDate) { lesson in
-                                LessonTimeGroup(lesson: lesson) {
-                                    editingLesson = lesson
-                                }
-                                Divider().padding(.leading, 16)
-                            }
-                        }
-                    }
-                    .coordinateSpace(name: "lessonScroll")
-                    .onPreferenceChange(ScrollOffsetKey.self) { offset in
-                        if offset < -30 && isExpanded {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isExpanded = false
-                            }
-                        } else if offset >= -5 && !isExpanded {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isExpanded = true
-                            }
-                        }
-                    }
+                    lessonScrollView
                 }
             }
             .navigationTitle("课表")
@@ -142,6 +111,60 @@ struct ScheduleView: View {
             }
             .sheet(item: $editingLesson) { lesson in
                 LessonFormView(lesson: lesson, initialDate: lesson.date)
+            }
+        }
+    }
+
+    // MARK: - Lesson scroll with calendar tracking
+
+    private var lessonScrollView: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(lessonsForSelectedDate) { lesson in
+                    LessonTimeGroup(lesson: lesson) {
+                        editingLesson = lesson
+                    }
+                    Divider().padding(.leading, 16)
+                }
+            }
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(
+                        key: ScrollOffsetKey.self,
+                        value: geo.frame(in: .named("lessonScroll")).minY
+                    )
+                }
+            )
+        }
+        .coordinateSpace(name: "lessonScroll")
+        .onPreferenceChange(ScrollOffsetKey.self) { offset in
+            handleScroll(offset)
+        }
+        .task {
+            // Ignore initial layout frames — enable tracking after settle
+            try? await Task.sleep(for: .milliseconds(600))
+            scrollTrackingEnabled = true
+        }
+    }
+
+    private func handleScroll(_ offset: CGFloat) {
+        guard scrollTrackingEnabled else { return }
+
+        let delta = offset - previousOffset
+        previousOffset = offset
+
+        // Scrolling down (finger moving up, offset decreasing, delta < 0)
+        // → collapse calendar to give more room
+        if delta < -8 && isExpanded && offset < -20 {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isExpanded = false
+            }
+        }
+
+        // Scrolled back to top (offset near 0) → expand calendar
+        if offset > -10 && !isExpanded {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isExpanded = true
             }
         }
     }
