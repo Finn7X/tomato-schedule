@@ -119,18 +119,15 @@ struct ScheduleView: View {
                     Button(role: .destructive) {
                         withAnimation { modelContext.delete(lesson) }
                     } label: {
-                        Label("删除", systemImage: "trash")
+                        Image(systemName: "trash")
                     }
 
                     Button {
                         withAnimation { lesson.isCompleted.toggle() }
                     } label: {
-                        Label(
-                            lesson.isCompleted ? "取消完成" : "完成",
-                            systemImage: lesson.isCompleted ? "arrow.uturn.backward.circle" : "checkmark.circle"
-                        )
+                        Image(systemName: lesson.isCompleted ? "arrow.uturn.backward" : "checkmark")
                     }
-                    .tint(lesson.isCompleted ? .orange : .green)
+                    .tint(lesson.isCompleted ? .gray : .green)
                 }
             }
         }
