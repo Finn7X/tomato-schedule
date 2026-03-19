@@ -9,10 +9,11 @@ struct CourseFormView: View {
 
     @State private var name: String = ""
     @State private var colorHex: String = "#FF6B6B"
+    @State private var notes: String = ""
+    @State private var showAdvanced: Bool = false
     @State private var subject: String = ""
     @State private var totalHours: Double = 0
     @State private var totalLessons: Int = 0
-    @State private var notes: String = ""
 
     var isEditing: Bool { course != nil }
 
@@ -27,15 +28,17 @@ struct CourseFormView: View {
                     TextField("例如：钢琴课、数学辅导", text: $name)
                 }
 
-                Section("科目类型") {
-                    TextField("例如：阅读、全科、数学", text: $subject)
-                }
-
                 Section("课程颜色") {
                     ColorPickerGrid(selectedHex: $colorHex)
                 }
 
-                Section("课时规划") {
+                Section("备注") {
+                    TextField("可选备注信息", text: $notes, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+
+                DisclosureGroup("高级设置", isExpanded: $showAdvanced) {
+                    TextField("科目类型（如：阅读、数学）", text: $subject)
                     HStack {
                         Text("计划总课时")
                         Spacer()
@@ -43,8 +46,7 @@ struct CourseFormView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(width: 80)
-                        Text("小时")
-                            .foregroundStyle(.secondary)
+                        Text("小时").foregroundStyle(.secondary)
                     }
                     HStack {
                         Text("计划总节数")
@@ -53,14 +55,8 @@ struct CourseFormView: View {
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                             .frame(width: 80)
-                        Text("节")
-                            .foregroundStyle(.secondary)
+                        Text("节").foregroundStyle(.secondary)
                     }
-                }
-
-                Section("备注") {
-                    TextField("可选备注信息", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
                 }
             }
             .navigationTitle(isEditing ? "编辑课程" : "新建课程")
@@ -78,10 +74,11 @@ struct CourseFormView: View {
                 if let course {
                     name = course.name
                     colorHex = course.colorHex
+                    notes = course.notes
                     subject = course.subject
                     totalHours = course.totalHours
                     totalLessons = course.totalLessons
-                    notes = course.notes
+                    showAdvanced = !course.subject.isEmpty || course.totalHours > 0 || course.totalLessons > 0
                 }
             }
         }
@@ -92,10 +89,10 @@ struct CourseFormView: View {
         if let course {
             course.name = trimmedName
             course.colorHex = colorHex
+            course.notes = notes
             course.subject = subject.trimmingCharacters(in: .whitespaces)
             course.totalHours = totalHours
             course.totalLessons = totalLessons
-            course.notes = notes
         } else {
             let newCourse = Course(
                 name: trimmedName,

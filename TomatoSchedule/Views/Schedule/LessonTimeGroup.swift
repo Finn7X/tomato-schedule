@@ -4,7 +4,7 @@ struct LessonTimeGroup: View {
     let lesson: Lesson
     var onEdit: () -> Void = {}
 
-    @State private var isExpanded: Bool = false
+    @State private var isExpanded: Bool = true
 
     var body: some View {
         VStack(spacing: 0) {

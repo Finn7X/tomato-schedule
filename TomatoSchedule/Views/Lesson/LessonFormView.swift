@@ -14,10 +14,11 @@ struct LessonFormView: View {
     @State private var date: Date
     @State private var startTime: Date
     @State private var endTime: Date
+    @State private var notes: String = ""
+    @State private var showAdvanced: Bool = false
     @State private var lessonNumber: Int = 0
     @State private var isCompleted: Bool = false
     @State private var location: String = ""
-    @State private var notes: String = ""
 
     var isEditing: Bool { lesson != nil }
 
@@ -67,7 +68,12 @@ struct LessonFormView: View {
                     DatePicker("结束时间", selection: $endTime, displayedComponents: .hourAndMinute)
                 }
 
-                Section("课时信息") {
+                Section("备注") {
+                    TextField("可选备注", text: $notes, axis: .vertical)
+                        .lineLimit(2...4)
+                }
+
+                DisclosureGroup("更多设置", isExpanded: $showAdvanced) {
                     HStack {
                         Text("第几节课")
                         Spacer()
@@ -76,28 +82,17 @@ struct LessonFormView: View {
                             .multilineTextAlignment(.trailing)
                             .frame(width: 80)
                         if let total = selectedCourse?.totalLessons, total > 0 {
-                            Text("/ \(total)")
-                                .foregroundStyle(.secondary)
+                            Text("/ \(total)").foregroundStyle(.secondary)
                         }
                     }
                     Toggle("已完成", isOn: $isCompleted)
-                }
-
-                Section("上课地点") {
-                    TextField("例如：3楼教室、学生家中", text: $location)
-                }
-
-                Section("备注") {
-                    TextField("可选备注", text: $notes, axis: .vertical)
-                        .lineLimit(2...4)
+                    TextField("上课地点（可选）", text: $location)
                 }
 
                 if isEditing {
                     Section {
                         Button(role: .destructive) {
-                            if let lesson {
-                                modelContext.delete(lesson)
-                            }
+                            if let lesson { modelContext.delete(lesson) }
                             dismiss()
                         } label: {
                             HStack {
@@ -127,10 +122,11 @@ struct LessonFormView: View {
                     date = lesson.date
                     startTime = lesson.startTime
                     endTime = lesson.endTime
+                    notes = lesson.notes
                     lessonNumber = lesson.lessonNumber
                     isCompleted = lesson.isCompleted
                     location = lesson.location
-                    notes = lesson.notes
+                    showAdvanced = lesson.lessonNumber > 0 || lesson.isCompleted || !lesson.location.isEmpty
                 }
             }
         }
@@ -148,10 +144,10 @@ struct LessonFormView: View {
             lesson.date = DateHelper.startOfDay(date)
             lesson.startTime = actualStart
             lesson.endTime = actualEnd
+            lesson.notes = notes
             lesson.lessonNumber = lessonNumber
             lesson.isCompleted = isCompleted
             lesson.location = location.trimmingCharacters(in: .whitespaces)
-            lesson.notes = notes
         } else {
             let newLesson = Lesson(
                 course: selectedCourse,
