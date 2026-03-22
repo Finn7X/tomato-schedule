@@ -35,6 +35,7 @@ struct ScheduleView: View {
     @State private var isExpanded: Bool = true
     @State private var showingAddLesson: Bool = false
     @State private var editingLesson: Lesson?
+    @AppStorage("showIncomeInCourseList") private var showIncome = true
 
     // MARK: - Computed
 
@@ -94,7 +95,7 @@ struct ScheduleView: View {
                     weekStart: DateHelper.weekRange(for: selectedDate).start,
                     totalCount: statisticsTotal,
                     completedCount: statisticsCompleted,
-                    income: statisticsIncome
+                    income: showIncome ? statisticsIncome : 0
                 )
 
                 Divider()

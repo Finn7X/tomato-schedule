@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LessonDetailCard: View {
     let lesson: Lesson
+    @AppStorage("showIncomeInCourseList") private var showIncome = true
 
     private var courseColor: Color {
         PresetColors.color(for: lesson.course?.colorHex ?? "#78909C")
@@ -71,7 +72,7 @@ struct LessonDetailCard: View {
         if let progress = lesson.course?.hoursProgressText {
             parts.append(progress)
         }
-        if let price = lesson.priceDisplayText {
+        if showIncome, let price = lesson.priceDisplayText {
             parts.append(price)
         }
         if let seq = lesson.headerSequenceText {
