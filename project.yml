@@ -2,7 +2,7 @@ name: TomatoSchedule
 options:
   bundleIdPrefix: com.xujifeng
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "17.0"
   developmentLanguage: zh-Hans
 settings:
   base:

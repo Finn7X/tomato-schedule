@@ -1,6 +1,31 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Scroll-driven calendar fold modifier (iOS 17 + 18 compatible)
+
+private struct ScrollCalendarFoldModifier: ViewModifier {
+    @Binding var isExpanded: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content
+                .onScrollGeometryChange(for: CGFloat.self) { geo in
+                    geo.contentOffset.y
+                } action: { _, newValue in
+                    if newValue > 60 && isExpanded {
+                        withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
+                    }
+                    if newValue < -10 && !isExpanded {
+                        withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
+                    }
+                }
+        } else {
+            // iOS 17: manual chevron toggle only, no scroll tracking
+            content
+        }
+    }
+}
+
 struct ScheduleView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allLessons: [Lesson]
@@ -134,19 +159,6 @@ struct ScheduleView: View {
             }
         }
         .listStyle(.plain)
-        .onScrollGeometryChange(for: CGFloat.self) { geo in
-            geo.contentOffset.y
-        } action: { _, newValue in
-            // Collapse: user scrolled down past threshold
-            if newValue > 60 && isExpanded {
-                withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
-            }
-            // Expand: user pulled down past top (rubber band bounce)
-            // Negative offset only occurs during active pull-down,
-            // never from passive layout changes — no feedback loop.
-            if newValue < -10 && !isExpanded {
-                withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
-            }
-        }
+        .modifier(ScrollCalendarFoldModifier(isExpanded: $isExpanded))
     }
 }
