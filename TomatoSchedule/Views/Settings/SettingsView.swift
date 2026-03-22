@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allLessons: [Lesson]
     @ObservedObject private var syncService = CalendarSyncService.shared
+    @AppStorage("showIncomeInCourseList") private var showIncomeInCourseList = true
 
     @State private var showingSyncConfirmation = false
     @State private var showingDisableConfirmation = false
@@ -89,6 +90,11 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("从系统日历导入")
+                }
+
+                // Display preferences
+                Section("显示") {
+                    Toggle("课程列表显示收入", isOn: $showIncomeInCourseList)
                 }
             }
             .navigationTitle("设置")

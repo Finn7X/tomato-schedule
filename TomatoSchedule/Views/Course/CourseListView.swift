@@ -5,6 +5,7 @@ struct CourseListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Course.createdAt, order: .reverse) private var courses: [Course]
 
+    @AppStorage("showIncomeInCourseList") private var showIncome = true
     @State private var showingAddForm = false
     @State private var editingCourse: Course?
     @State private var courseToDelete: Course?
@@ -94,23 +95,33 @@ struct CourseListView: View {
                 Text(course.name)
                     .font(.body)
                     .fontWeight(.medium)
-                if course.hourlyRate > 0 {
-                    Text("¥\(Int(course.hourlyRate))/h")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if !course.notes.isEmpty {
-                    Text(course.notes)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(spacing: 6) {
+                    if course.hourlyRate > 0 {
+                        Text("¥\(Int(course.hourlyRate))/h")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if !course.notes.isEmpty {
+                        Text(course.notes)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
 
             Spacer()
 
-            Text("\(course.lessons.count) 节课")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(course.lessons.count) 节课")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if showIncome && course.totalIncome > 0 {
+                    Text("¥\(Int(course.totalIncome))")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+            }
         }
         .padding(.vertical, 4)
     }
