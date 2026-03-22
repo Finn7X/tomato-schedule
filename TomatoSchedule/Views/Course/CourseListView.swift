@@ -7,6 +7,7 @@ struct CourseListView: View {
 
     @State private var showingAddForm = false
     @State private var editingCourse: Course?
+    @State private var courseToDelete: Course?
 
     var body: some View {
         NavigationStack {
@@ -25,8 +26,7 @@ struct CourseListView: View {
                                 .onTapGesture { editingCourse = course }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
-                                        try? CalendarSyncService.shared.removeEventsForLessons(Array(course.lessons))
-                                        modelContext.delete(course)
+                                        courseToDelete = course
                                     } label: {
                                         Label("删除", systemImage: "trash")
                                     }
@@ -51,6 +51,35 @@ struct CourseListView: View {
             .sheet(item: $editingCourse) { course in
                 CourseFormView(course: course)
             }
+            .confirmationDialog(
+                "确认删除课程",
+                isPresented: Binding(
+                    get: { courseToDelete != nil },
+                    set: { if !$0 { courseToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("确认删除", role: .destructive) {
+                    if let course = courseToDelete {
+                        try? CalendarSyncService.shared.removeEventsForLessons(Array(course.lessons))
+                        modelContext.delete(course)
+                        courseToDelete = nil
+                    }
+                }
+                Button("取消", role: .cancel) { courseToDelete = nil }
+            } message: {
+                if let course = courseToDelete {
+                    let completed = course.completedLessons.count
+                    let income = course.totalIncome
+                    if completed > 0 && income > 0 {
+                        Text("「\(course.name)」下有 \(completed) 节已完成课时，总收入 ¥\(Int(income))。删除后相关收入记录将一并移除且不可恢复。")
+                    } else if completed > 0 {
+                        Text("「\(course.name)」下有 \(completed) 节已完成课时。删除后不可恢复。")
+                    } else {
+                        Text("确定要删除「\(course.name)」吗？")
+                    }
+                }
+            }
         }
     }
 
@@ -65,7 +94,11 @@ struct CourseListView: View {
                 Text(course.name)
                     .font(.body)
                     .fontWeight(.medium)
-                if !course.notes.isEmpty {
+                if course.hourlyRate > 0 {
+                    Text("¥\(Int(course.hourlyRate))/h")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if !course.notes.isEmpty {
                     Text(course.notes)
                         .font(.caption)
                         .foregroundStyle(.secondary)

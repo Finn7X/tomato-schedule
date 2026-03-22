@@ -20,6 +20,10 @@ final class Lesson {
     // V3 日历同步
     var calendarEventId: String
 
+    // V4 收入
+    var isPriceOverridden: Bool
+    var priceOverride: Double
+
     init(
         course: Course,
         studentName: String = "",
@@ -43,6 +47,22 @@ final class Lesson {
         self.isCompleted = isCompleted
         self.location = location
         self.calendarEventId = ""
+        self.isPriceOverridden = false
+        self.priceOverride = 0
+    }
+
+    var effectivePrice: Double {
+        if isPriceOverridden { return priceOverride }
+        guard let rate = course?.hourlyRate, rate > 0 else { return 0 }
+        let raw = rate * Double(durationMinutes) / 60.0
+        return (raw * 100).rounded() / 100
+    }
+
+    var priceDisplayText: String? {
+        let p = effectivePrice
+        guard p > 0 || isPriceOverridden else { return nil }
+        if isPriceOverridden && p == 0 { return "免费" }
+        return p == p.rounded() ? "¥\(Int(p))" : String(format: "¥%.1f", p)
     }
 
     var duration: TimeInterval {

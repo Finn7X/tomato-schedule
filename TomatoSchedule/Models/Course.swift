@@ -17,13 +17,17 @@ final class Course {
     var totalHours: Double
     var totalLessons: Int
 
+    // V4 收入
+    var hourlyRate: Double
+
     init(
         name: String,
         colorHex: String = "#FF6B6B",
         notes: String = "",
         subject: String = "",
         totalHours: Double = 0,
-        totalLessons: Int = 0
+        totalLessons: Int = 0,
+        hourlyRate: Double = 0
     ) {
         self.id = UUID()
         self.name = name
@@ -34,6 +38,11 @@ final class Course {
         self.subject = subject
         self.totalHours = totalHours
         self.totalLessons = totalLessons
+        self.hourlyRate = hourlyRate
+    }
+
+    var totalIncome: Double {
+        completedLessons.reduce(0) { $0 + $1.effectivePrice }
     }
 
     // 累计层

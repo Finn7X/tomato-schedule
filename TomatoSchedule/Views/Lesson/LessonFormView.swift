@@ -19,6 +19,8 @@ struct LessonFormView: View {
     @State private var lessonNumber: Int = 0
     @State private var isCompleted: Bool = false
     @State private var location: String = ""
+    @State private var isPriceOverridden: Bool = false
+    @State private var priceOverride: Double = 0
 
     var isEditing: Bool { lesson != nil }
 
@@ -87,6 +89,31 @@ struct LessonFormView: View {
                     }
                     Toggle("已完成", isOn: $isCompleted)
                     TextField("上课地点（可选）", text: $location)
+
+                    // Pricing
+                    VStack(alignment: .leading, spacing: 4) {
+                        Picker("课时费用", selection: $isPriceOverridden) {
+                            Text("自动计算").tag(false)
+                            Text("自定义").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+
+                        if isPriceOverridden {
+                            HStack {
+                                Text("¥")
+                                TextField("金额", value: $priceOverride, format: .number)
+                                    .keyboardType(.decimalPad)
+                                Text("(0 = 免费)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if let rate = selectedCourse?.hourlyRate, rate > 0 {
+                            let auto = rate * Double(max(DateHelper.calendar.dateComponents([.minute], from: startTime, to: endTime).minute ?? 60, 1)) / 60.0
+                            Text("¥\(Int((auto * 100).rounded() / 100)) (¥\(Int(rate))/h)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 if isEditing {
@@ -126,7 +153,9 @@ struct LessonFormView: View {
                     lessonNumber = lesson.lessonNumber
                     isCompleted = lesson.isCompleted
                     location = lesson.location
-                    showAdvanced = lesson.lessonNumber > 0 || lesson.isCompleted || !lesson.location.isEmpty
+                    isPriceOverridden = lesson.isPriceOverridden
+                    priceOverride = lesson.priceOverride
+                    showAdvanced = lesson.lessonNumber > 0 || lesson.isCompleted || !lesson.location.isEmpty || lesson.isPriceOverridden
                 }
             }
         }
@@ -148,6 +177,8 @@ struct LessonFormView: View {
             lesson.lessonNumber = lessonNumber
             lesson.isCompleted = isCompleted
             lesson.location = location.trimmingCharacters(in: .whitespaces)
+            lesson.isPriceOverridden = isPriceOverridden
+            lesson.priceOverride = priceOverride
         } else {
             let newLesson = Lesson(
                 course: selectedCourse,

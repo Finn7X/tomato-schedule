@@ -71,6 +71,9 @@ struct LessonDetailCard: View {
         if let progress = lesson.course?.hoursProgressText {
             parts.append(progress)
         }
+        if let price = lesson.priceDisplayText {
+            parts.append(price)
+        }
         if let seq = lesson.headerSequenceText {
             parts.append(seq)
         }

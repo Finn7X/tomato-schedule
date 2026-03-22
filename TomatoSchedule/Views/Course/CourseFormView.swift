@@ -14,6 +14,7 @@ struct CourseFormView: View {
     @State private var subject: String = ""
     @State private var totalHours: Double = 0
     @State private var totalLessons: Int = 0
+    @State private var hourlyRate: Double = 0
 
     var isEditing: Bool { course != nil }
 
@@ -38,6 +39,15 @@ struct CourseFormView: View {
                 }
 
                 DisclosureGroup("高级设置", isExpanded: $showAdvanced) {
+                    HStack {
+                        Text("小时单价")
+                        Spacer()
+                        TextField("元", value: $hourlyRate, format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
+                        Text("元/h").foregroundStyle(.secondary)
+                    }
                     TextField("科目类型（如：阅读、数学）", text: $subject)
                     HStack {
                         Text("计划总课时")
@@ -78,7 +88,8 @@ struct CourseFormView: View {
                     subject = course.subject
                     totalHours = course.totalHours
                     totalLessons = course.totalLessons
-                    showAdvanced = !course.subject.isEmpty || course.totalHours > 0 || course.totalLessons > 0
+                    hourlyRate = course.hourlyRate
+                    showAdvanced = !course.subject.isEmpty || course.totalHours > 0 || course.totalLessons > 0 || course.hourlyRate > 0
                 }
             }
         }
@@ -86,22 +97,28 @@ struct CourseFormView: View {
 
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedSubject = subject.trimmingCharacters(in: .whitespaces)
         if let course {
+            let needsCalendarSync = course.name != trimmedName || course.subject != trimmedSubject
             course.name = trimmedName
             course.colorHex = colorHex
             course.notes = notes
-            course.subject = subject.trimmingCharacters(in: .whitespaces)
+            course.subject = trimmedSubject
             course.totalHours = totalHours
             course.totalLessons = totalLessons
-            try? CalendarSyncService.shared.syncLessonsForCourse(course)
+            course.hourlyRate = hourlyRate
+            if needsCalendarSync {
+                try? CalendarSyncService.shared.syncLessonsForCourse(course)
+            }
         } else {
             let newCourse = Course(
                 name: trimmedName,
                 colorHex: colorHex,
                 notes: notes,
-                subject: subject.trimmingCharacters(in: .whitespaces),
+                subject: trimmedSubject,
                 totalHours: totalHours,
-                totalLessons: totalLessons
+                totalLessons: totalLessons,
+                hourlyRate: hourlyRate
             )
             modelContext.insert(newCourse)
         }

@@ -150,6 +150,11 @@ struct ScheduleView: View {
 
                     Button {
                         withAnimation { lesson.isCompleted.toggle() }
+                        // Freeze price on completion
+                        if lesson.isCompleted && !lesson.isPriceOverridden {
+                            lesson.priceOverride = lesson.effectivePrice
+                            lesson.isPriceOverridden = true
+                        }
                         try? CalendarSyncService.shared.syncLesson(lesson)
                     } label: {
                         Image(systemName: lesson.isCompleted ? "arrow.uturn.backward" : "checkmark")
