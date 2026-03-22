@@ -44,11 +44,12 @@ struct TomatoScheduleApp: App {
             )
             if done {
                 if freeLesson {
-                    lesson.isPriceOverridden = true
                     lesson.priceOverride = 0
-                } else {
                     lesson.isPriceOverridden = true
-                    lesson.priceOverride = lesson.effectivePrice
+                } else {
+                    let price = lesson.effectivePrice  // calculate BEFORE setting isPriceOverridden
+                    lesson.priceOverride = price
+                    lesson.isPriceOverridden = true
                 }
             }
             context.insert(lesson)
