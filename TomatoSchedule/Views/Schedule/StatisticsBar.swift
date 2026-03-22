@@ -6,6 +6,7 @@ struct StatisticsBar: View {
     let weekStart: Date
     let totalCount: Int
     let completedCount: Int
+    let income: Double
 
     var body: some View {
         Text(displayText)
@@ -16,11 +17,12 @@ struct StatisticsBar: View {
     }
 
     private var displayText: String {
+        let incomeText = income > 0 ? "，收入¥\(Int(income))" : ""
         if isMonthMode {
             let monthNum = DateHelper.calendar.component(.month, from: month)
-            return "\(monthNum)月总排课\(totalCount)次，已上\(completedCount)次"
+            return "\(monthNum)月排课\(totalCount)次，已上\(completedCount)次\(incomeText)"
         } else {
-            return "本周排课\(totalCount)次，已上\(completedCount)次"
+            return "本周排课\(totalCount)次，已上\(completedCount)次\(incomeText)"
         }
     }
 }

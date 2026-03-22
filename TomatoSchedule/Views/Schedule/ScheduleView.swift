@@ -58,7 +58,12 @@ struct ScheduleView: View {
     }
 
     private var statisticsCompleted: Int {
-        lessonsInRange.filter(\.isCompleted).count
+        lessonsInRange.filter { $0.isCompleted || $0.endTime < .now }.count
+    }
+
+    private var statisticsIncome: Double {
+        lessonsInRange.filter { $0.isCompleted || $0.endTime < .now }
+            .reduce(0) { $0 + $1.effectivePrice }
     }
 
     private var lessonsInRange: [Lesson] {
@@ -88,7 +93,8 @@ struct ScheduleView: View {
                     month: displayedMonth,
                     weekStart: DateHelper.weekRange(for: selectedDate).start,
                     totalCount: statisticsTotal,
-                    completedCount: statisticsCompleted
+                    completedCount: statisticsCompleted,
+                    income: statisticsIncome
                 )
 
                 Divider()
@@ -126,6 +132,19 @@ struct ScheduleView: View {
             }
             .sheet(item: $editingLesson) { lesson in
                 LessonFormView(lesson: lesson, initialDate: lesson.date)
+            }
+            .onAppear { autoCompletePastLessons() }
+        }
+    }
+
+    /// Auto-complete past lessons that haven't been manually checked
+    private func autoCompletePastLessons() {
+        let now = Date.now
+        for lesson in allLessons where !lesson.isCompleted && lesson.endTime < now {
+            lesson.isCompleted = true
+            if !lesson.isPriceOverridden {
+                lesson.priceOverride = lesson.effectivePrice
+                lesson.isPriceOverridden = true
             }
         }
     }
