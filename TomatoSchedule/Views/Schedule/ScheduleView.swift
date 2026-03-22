@@ -10,7 +10,6 @@ struct ScheduleView: View {
     @State private var isExpanded: Bool = true
     @State private var showingAddLesson: Bool = false
     @State private var editingLesson: Lesson?
-    @State private var scrollLocked: Bool = false
 
     // MARK: - Computed
 
@@ -136,21 +135,15 @@ struct ScheduleView: View {
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y
         } action: { _, newValue in
-            guard !scrollLocked else { return }
+            // Collapse: user scrolled down past threshold
             if newValue > 60 && isExpanded {
-                scrollLocked = true
                 withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(500))
-                    scrollLocked = false
-                }
-            } else if newValue < 5 && !isExpanded {
-                scrollLocked = true
+            }
+            // Expand: user pulled down past top (rubber band bounce)
+            // Negative offset only occurs during active pull-down,
+            // never from passive layout changes — no feedback loop.
+            if newValue < -10 && !isExpanded {
                 withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(500))
-                    scrollLocked = false
-                }
             }
         }
     }
