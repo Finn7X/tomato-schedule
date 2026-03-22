@@ -22,11 +22,19 @@ struct CalendarImportView: View {
         case mapAndImport
     }
 
+    // MARK: - Parsed event model
+
+    struct ParsedEvent {
+        let event: EKEvent
+        let courseName: String
+        let studentName: String
+    }
+
     struct EventGroup: Identifiable {
         let id = UUID()
-        let title: String
-        let events: [EKEvent]
-        var courseMapping: CourseMapping = .skip
+        let parsedCourseName: String
+        let parsedEvents: [ParsedEvent]
+        var courseMapping: CourseMapping = .createNew
 
         enum CourseMapping: Hashable {
             case existingCourse(Course)
@@ -104,26 +112,37 @@ struct CalendarImportView: View {
     private var mappingView: some View {
         List {
             Section {
-                Text("共 \(eventGroups.flatMap(\.events).count) 个事件，\(eventGroups.count) 个分组")
+                let totalEvents = eventGroups.reduce(0) { $0 + $1.parsedEvents.count }
+                Text("共 \(totalEvents) 个事件，识别出 \(eventGroups.count) 门课程")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             ForEach(Array(eventGroups.indices), id: \.self) { index in
                 Section {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Course name + event count
                         HStack {
-                            Text(eventGroups[index].title)
+                            Text(eventGroups[index].parsedCourseName)
                                 .fontWeight(.medium)
                             Spacer()
-                            Text("\(eventGroups[index].events.count) 个事件")
+                            Text("\(eventGroups[index].parsedEvents.count) 节")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
+                        // Show parsed student names
+                        let students = Set(eventGroups[index].parsedEvents.map(\.studentName).filter { !$0.isEmpty })
+                        if !students.isEmpty {
+                            Text("学生: \(students.sorted().joined(separator: "、"))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        // Course mapping picker
                         Picker("映射到", selection: $eventGroups[index].courseMapping) {
                             Text("跳过不导入").tag(EventGroup.CourseMapping.skip)
-                            Text("新建课程「\(eventGroups[index].title)」").tag(EventGroup.CourseMapping.createNew)
+                            Text("新建课程").tag(EventGroup.CourseMapping.createNew)
                             ForEach(courses) { course in
                                 Text(course.name).tag(EventGroup.CourseMapping.existingCourse(course))
                             }
@@ -162,6 +181,42 @@ struct CalendarImportView: View {
         }
     }
 
+    // MARK: - Title Parsing
+
+    /// Split event title into (courseName, studentName).
+    /// Tries common separators: " · ", " - ", "-", "—", last resort splits on last space cluster.
+    private static func parseTitle(_ title: String) -> (course: String, student: String) {
+        let separators = [" · ", " - ", "·", "—", "-"]
+        for sep in separators {
+            let parts = title.split(separator: Substring(sep), maxSplits: 1)
+            if parts.count == 2 {
+                let course = parts[0].trimmingCharacters(in: .whitespaces)
+                let student = parts[1].trimmingCharacters(in: .whitespaces)
+                // Only treat as student if the second part is short (likely a name, not a long description)
+                if student.count <= 10 && !student.isEmpty {
+                    return (course, student)
+                }
+            }
+        }
+        return (title.trimmingCharacters(in: .whitespaces), "")
+    }
+
+    /// Fuzzy match a parsed course name against existing courses.
+    /// Priority: exact → contains → prefix.
+    private func matchCourse(for name: String) -> Course? {
+        // Exact
+        if let exact = courses.first(where: { $0.name == name }) {
+            return exact
+        }
+        // Course name contains the parsed name, or vice versa
+        if let contains = courses.first(where: {
+            $0.name.contains(name) || name.contains($0.name)
+        }) {
+            return contains
+        }
+        return nil
+    }
+
     // MARK: - Actions
 
     private func toggleCalendar(_ calendar: EKCalendar) {
@@ -176,21 +231,29 @@ struct CalendarImportView: View {
         let calendars = availableCalendars.filter { selectedCalendarIds.contains($0.calendarIdentifier) }
         let events = syncService.fetchEvents(from: calendars, start: startDate, end: endDate)
 
-        // Group by title
-        var grouped: [String: [EKEvent]] = [:]
-        for event in events {
-            let key = event.title ?? "未命名"
-            grouped[key, default: []].append(event)
+        // Parse all events
+        let parsed = events.map { event -> ParsedEvent in
+            let title = event.title ?? "未命名"
+            let (courseName, studentName) = Self.parseTitle(title)
+            return ParsedEvent(event: event, courseName: courseName, studentName: studentName)
         }
 
-        eventGroups = grouped.map { title, events in
-            var group = EventGroup(title: title, events: events)
-            // Auto-match by name
-            if let match = courses.first(where: { $0.name == title }) {
-                group.courseMapping = .existingCourse(match)
+        // Group by parsed course name
+        var grouped: [String: [ParsedEvent]] = [:]
+        for p in parsed {
+            grouped[p.courseName, default: []].append(p)
+        }
+
+        eventGroups = grouped.map { courseName, events in
+            var group = EventGroup(parsedCourseName: courseName, parsedEvents: events)
+            // Smart matching
+            if let matched = matchCourse(for: courseName) {
+                group.courseMapping = .existingCourse(matched)
+            } else {
+                group.courseMapping = .createNew
             }
             return group
-        }.sorted { $0.title < $1.title }
+        }.sorted { $0.parsedCourseName < $1.parsedCourseName }
 
         step = .mapAndImport
     }
@@ -206,16 +269,18 @@ struct CalendarImportView: View {
             case .existingCourse(let c):
                 course = c
             case .createNew:
-                let newCourse = Course(name: group.title)
+                let newCourse = Course(name: group.parsedCourseName)
                 modelContext.insert(newCourse)
                 course = newCourse
             }
 
             guard let course else { continue }
 
-            for event in group.events {
-                // Dedup check
+            for parsed in group.parsedEvents {
+                let event = parsed.event
                 let eventDate = DateHelper.startOfDay(event.startDate)
+
+                // Dedup
                 let isDuplicate = existingLessons.contains { lesson in
                     lesson.course?.id == course.id &&
                     DateHelper.isSameDay(lesson.date, eventDate) &&
@@ -225,6 +290,7 @@ struct CalendarImportView: View {
 
                 let lesson = Lesson(
                     course: course,
+                    studentName: parsed.studentName,
                     date: eventDate,
                     startTime: event.startDate,
                     endTime: event.endDate,
