@@ -6,7 +6,10 @@ struct TomatoScheduleApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
-                .onAppear { seedSampleDataIfNeeded() }
+                .onAppear {
+                    seedSampleDataIfNeeded()
+                    autoCompletePastLessons()
+                }
         }
         .modelContainer(for: [Course.self, Lesson.self])
     }
@@ -84,5 +87,24 @@ struct TomatoScheduleApp: App {
         make(reading, student: "陈牧崧", offset: 7, sh: 8, sm: 0, eh: 10, em: 0, num: 8, loc: "凯旋城校区VIP3067教室")
 
         try? context.save()
+    }
+
+    @MainActor
+    private func autoCompletePastLessons() {
+        guard let container = try? ModelContainer(for: Course.self, Lesson.self) else { return }
+        let context = container.mainContext
+        let now = Date.now
+        let descriptor = FetchDescriptor<Lesson>()
+        guard let lessons = try? context.fetch(descriptor) else { return }
+        var changed = false
+        for lesson in lessons where !lesson.isCompleted && lesson.endTime < now {
+            lesson.isCompleted = true
+            if !lesson.isPriceOverridden {
+                lesson.priceOverride = lesson.effectivePrice
+                lesson.isPriceOverridden = true
+            }
+            changed = true
+        }
+        if changed { try? context.save() }
     }
 }

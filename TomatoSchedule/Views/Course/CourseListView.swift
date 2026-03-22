@@ -22,9 +22,16 @@ struct CourseListView: View {
                 } else {
                     List {
                         ForEach(courses) { course in
-                            courseRow(course)
-                                .contentShape(Rectangle())
-                                .onTapGesture { editingCourse = course }
+                            HStack {
+                                courseRow(course)
+                                if showIncome && course.totalIncome > 0 {
+                                    Text("¥\(Int(course.totalIncome))")
+                                        .font(.caption)
+                                        .foregroundStyle(.green)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture { editingCourse = course }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
                                         courseToDelete = course
@@ -116,11 +123,6 @@ struct CourseListView: View {
                 Text("\(course.lessons.count) 节课")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                if showIncome && course.totalIncome > 0 {
-                    Text("¥\(Int(course.totalIncome))")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
             }
         }
         .padding(.vertical, 4)

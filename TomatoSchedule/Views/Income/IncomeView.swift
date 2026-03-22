@@ -17,7 +17,7 @@ struct IncomeView: View {
     // MARK: - Computed
 
     private var completedLessons: [Lesson] {
-        allLessons.filter { $0.isCompleted }
+        allLessons.filter { $0.isCompleted || $0.endTime < .now }
     }
 
     private var currentRange: (start: Date, end: Date) {
