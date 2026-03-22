@@ -93,6 +93,7 @@ struct CourseFormView: View {
             course.subject = subject.trimmingCharacters(in: .whitespaces)
             course.totalHours = totalHours
             course.totalLessons = totalLessons
+            try? CalendarSyncService.shared.syncLessonsForCourse(course)
         } else {
             let newCourse = Course(
                 name: trimmedName,

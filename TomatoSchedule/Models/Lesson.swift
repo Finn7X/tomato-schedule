@@ -17,6 +17,9 @@ final class Lesson {
     var isCompleted: Bool
     var location: String
 
+    // V3 日历同步
+    var calendarEventId: String
+
     init(
         course: Course,
         studentName: String = "",
@@ -39,6 +42,7 @@ final class Lesson {
         self.lessonNumber = lessonNumber
         self.isCompleted = isCompleted
         self.location = location
+        self.calendarEventId = ""
     }
 
     var duration: TimeInterval {

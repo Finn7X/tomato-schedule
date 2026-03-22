@@ -117,6 +117,7 @@ struct ScheduleView: View {
                 .listRowSeparator(.hidden)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
+                        try? CalendarSyncService.shared.removeSyncedEvent(for: lesson)
                         withAnimation { modelContext.delete(lesson) }
                     } label: {
                         Image(systemName: "trash")
@@ -124,6 +125,7 @@ struct ScheduleView: View {
 
                     Button {
                         withAnimation { lesson.isCompleted.toggle() }
+                        try? CalendarSyncService.shared.syncLesson(lesson)
                     } label: {
                         Image(systemName: lesson.isCompleted ? "arrow.uturn.backward" : "checkmark")
                     }

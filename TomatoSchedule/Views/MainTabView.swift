@@ -12,6 +12,11 @@ struct MainTabView: View {
                 .tabItem {
                     Label("课程", systemImage: "book")
                 }
+
+            SettingsView()
+                .tabItem {
+                    Label("设置", systemImage: "gearshape")
+                }
         }
     }
 }

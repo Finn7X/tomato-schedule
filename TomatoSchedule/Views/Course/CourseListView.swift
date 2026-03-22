@@ -25,6 +25,7 @@ struct CourseListView: View {
                                 .onTapGesture { editingCourse = course }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
+                                        try? CalendarSyncService.shared.removeEventsForLessons(Array(course.lessons))
                                         modelContext.delete(course)
                                     } label: {
                                         Label("删除", systemImage: "trash")

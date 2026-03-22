@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict/>
+<dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>番茄课表需要访问您的日历，以便将课程安排同步到系统日历，并从日历导入日程。</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>番茄课表需要添加日程到您的日历，以便在系统日历中查看课程安排。</string>
+</dict>
 </plist>

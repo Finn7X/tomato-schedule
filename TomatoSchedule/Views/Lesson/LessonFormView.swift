@@ -161,6 +161,10 @@ struct LessonFormView: View {
                 location: location.trimmingCharacters(in: .whitespaces)
             )
             modelContext.insert(newLesson)
+            try? CalendarSyncService.shared.syncLesson(newLesson)
+        }
+        if let lesson {
+            try? CalendarSyncService.shared.syncLesson(lesson)
         }
         dismiss()
     }
