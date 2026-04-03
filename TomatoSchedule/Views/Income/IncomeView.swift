@@ -6,6 +6,7 @@ struct IncomeView: View {
     @Query private var allLessons: [Lesson]
     @Query(sort: \Course.name) private var courses: [Course]
 
+    @AppStorage("showEstimatedIncome") private var showEstimatedIncome = true
     @State private var period: Period = .month
 
     enum Period: String, CaseIterable {
@@ -33,6 +34,15 @@ struct IncomeView: View {
             let end = cal.date(byAdding: .year, value: 1, to: start)!
             return (start, end)
         }
+    }
+
+    private var allLessonsInRange: [Lesson] {
+        let range = currentRange
+        return allLessons.filter { $0.date >= range.start && $0.date < range.end }
+    }
+
+    private var estimatedIncome: Double {
+        allLessonsInRange.reduce(0) { $0 + $1.effectivePrice }
     }
 
     private var lessonsInRange: [Lesson] {
@@ -130,12 +140,22 @@ struct IncomeView: View {
                     .padding(.horizontal)
 
                     // Summary cards
-                    HStack(spacing: 12) {
-                        summaryCard(title: periodLabel + "收入", value: "¥\(Int(totalIncome))")
-                        summaryCard(title: "已完成", value: "\(lessonCount) 节")
-                        summaryCard(title: "课均", value: "¥\(Int(avgIncome))")
+                    if showEstimatedIncome {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                            summaryCard(title: periodLabel + "收入", value: "¥\(Int(totalIncome))")
+                            summaryCard(title: "预估收入", value: "¥\(Int(estimatedIncome))")
+                            summaryCard(title: "已完成", value: "\(lessonCount) 节")
+                            summaryCard(title: "课均", value: "¥\(Int(avgIncome))")
+                        }
+                        .padding(.horizontal)
+                    } else {
+                        HStack(spacing: 12) {
+                            summaryCard(title: periodLabel + "收入", value: "¥\(Int(totalIncome))")
+                            summaryCard(title: "已完成", value: "\(lessonCount) 节")
+                            summaryCard(title: "课均", value: "¥\(Int(avgIncome))")
+                        }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
 
                     // Chart
                     if !chartData.isEmpty {

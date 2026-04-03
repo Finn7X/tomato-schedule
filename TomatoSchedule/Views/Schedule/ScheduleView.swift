@@ -37,6 +37,7 @@ struct ScheduleView: View {
     @State private var showingBatchLesson: Bool = false
     @State private var editingLesson: Lesson?
     @AppStorage("showIncomeInCourseList") private var showIncome = true
+    @AppStorage("showEstimatedIncome") private var showEstimatedIncome = true
 
     // MARK: - Computed
 
@@ -68,6 +69,10 @@ struct ScheduleView: View {
             .reduce(0) { $0 + $1.effectivePrice }
     }
 
+    private var statisticsEstimatedIncome: Double {
+        lessonsInRange.reduce(0) { $0 + $1.effectivePrice }
+    }
+
     private var lessonsInRange: [Lesson] {
         if isExpanded {
             let range = DateHelper.monthRange(for: displayedMonth)
@@ -96,7 +101,8 @@ struct ScheduleView: View {
                     weekStart: DateHelper.weekRange(for: selectedDate).start,
                     totalCount: statisticsTotal,
                     completedCount: statisticsCompleted,
-                    income: showIncome ? statisticsIncome : 0
+                    income: showIncome ? statisticsIncome : 0,
+                    estimatedIncome: showIncome && showEstimatedIncome ? statisticsEstimatedIncome : 0
                 )
 
                 Divider()

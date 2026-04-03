@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Query private var allLessons: [Lesson]
     @ObservedObject private var syncService = CalendarSyncService.shared
     @AppStorage("showIncomeInCourseList") private var showIncomeInCourseList = true
+    @AppStorage("showEstimatedIncome") private var showEstimatedIncome = true
 
     @State private var showingSyncConfirmation = false
     @State private var showingDisableConfirmation = false
@@ -20,9 +21,9 @@ struct SettingsView: View {
             List {
                 // Income summary
                 Section("收入概览") {
-                    incomeRow("今日", income: incomeForToday)
-                    incomeRow("本周", income: incomeForWeek)
-                    incomeRow("本月", income: incomeForMonth)
+                    incomeRow("今日", income: incomeForToday, estimated: estimatedForToday)
+                    incomeRow("本周", income: incomeForWeek, estimated: estimatedForWeek)
+                    incomeRow("本月", income: incomeForMonth, estimated: estimatedForMonth)
                     NavigationLink("查看详细收入统计") {
                         IncomeView()
                     }
@@ -95,6 +96,7 @@ struct SettingsView: View {
                 // Display preferences
                 Section("显示") {
                     Toggle("课程列表显示收入", isOn: $showIncomeInCourseList)
+                    Toggle("显示预估收入", isOn: $showEstimatedIncome)
                 }
             }
             .navigationTitle("设置")
@@ -197,30 +199,54 @@ struct SettingsView: View {
     private var incomeForToday: Double {
         let today = DateHelper.startOfDay(.now)
         let tomorrow = DateHelper.endOfDay(.now)
-        return allLessons.filter { $0.isCompleted && $0.date >= today && $0.date < tomorrow }
+        return allLessons.filter { ($0.isCompleted || $0.endTime < .now) && $0.date >= today && $0.date < tomorrow }
             .reduce(0) { $0 + $1.effectivePrice }
     }
 
     private var incomeForWeek: Double {
         let range = DateHelper.weekRange(for: .now)
-        return allLessons.filter { $0.isCompleted && $0.date >= range.start && $0.date < range.end }
+        return allLessons.filter { ($0.isCompleted || $0.endTime < .now) && $0.date >= range.start && $0.date < range.end }
             .reduce(0) { $0 + $1.effectivePrice }
     }
 
     private var incomeForMonth: Double {
         let range = DateHelper.monthRange(for: .now)
-        return allLessons.filter { $0.isCompleted && $0.date >= range.start && $0.date < range.end }
+        return allLessons.filter { ($0.isCompleted || $0.endTime < .now) && $0.date >= range.start && $0.date < range.end }
+            .reduce(0) { $0 + $1.effectivePrice }
+    }
+
+    private var estimatedForToday: Double {
+        let today = DateHelper.startOfDay(.now)
+        let tomorrow = DateHelper.endOfDay(.now)
+        return allLessons.filter { $0.date >= today && $0.date < tomorrow }
+            .reduce(0) { $0 + $1.effectivePrice }
+    }
+
+    private var estimatedForWeek: Double {
+        let range = DateHelper.weekRange(for: .now)
+        return allLessons.filter { $0.date >= range.start && $0.date < range.end }
+            .reduce(0) { $0 + $1.effectivePrice }
+    }
+
+    private var estimatedForMonth: Double {
+        let range = DateHelper.monthRange(for: .now)
+        return allLessons.filter { $0.date >= range.start && $0.date < range.end }
             .reduce(0) { $0 + $1.effectivePrice }
     }
 
     @ViewBuilder
-    private func incomeRow(_ label: String, income: Double) -> some View {
+    private func incomeRow(_ label: String, income: Double, estimated: Double) -> some View {
         HStack {
             Text(label)
             Spacer()
             Text("¥\(Int(income))")
                 .fontWeight(.medium)
                 .foregroundStyle(income > 0 ? .primary : .secondary)
+            if showEstimatedIncome && estimated > income {
+                Text("(预估 ¥\(Int(estimated)))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
