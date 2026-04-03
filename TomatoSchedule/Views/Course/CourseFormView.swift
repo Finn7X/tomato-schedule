@@ -15,6 +15,9 @@ struct CourseFormView: View {
     @State private var totalHours: Double = 0
     @State private var totalLessons: Int = 0
     @State private var hourlyRate: Double = 0
+    @State private var showRateChangeConfirmation = false
+    @State private var pendingRate: Double = 0
+    @State private var pendingOldRate: Double = 0
 
     var isEditing: Bool { course != nil }
 
@@ -92,25 +95,41 @@ struct CourseFormView: View {
                     showAdvanced = !course.subject.isEmpty || course.totalHours > 0 || course.totalLessons > 0 || course.hourlyRate > 0
                 }
             }
+            .confirmationDialog(
+                "课时单价已更改",
+                isPresented: $showRateChangeConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("更新未来课程") {
+                    if let course {
+                        applyAllChanges(course: course, updateFutureLessons: true)
+                    }
+                }
+                Button("全部不更新") {
+                    if let course {
+                        applyAllChanges(course: course, updateFutureLessons: false)
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("课时单价从 ¥\(Int(pendingOldRate))/h 更改为 ¥\(Int(pendingRate))/h。\n更新未来自动定价的课程？（手动设定过价格的课不受影响）")
+            }
         }
     }
 
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        let trimmedSubject = subject.trimmingCharacters(in: .whitespaces)
         if let course {
-            let needsCalendarSync = course.name != trimmedName || course.subject != trimmedSubject
-            course.name = trimmedName
-            course.colorHex = colorHex
-            course.notes = notes
-            course.subject = trimmedSubject
-            course.totalHours = totalHours
-            course.totalLessons = totalLessons
-            course.hourlyRate = hourlyRate
-            if needsCalendarSync {
-                try? CalendarSyncService.shared.syncLessonsForCourse(course)
+            let rateChanged = course.hourlyRate != hourlyRate && hourlyRate > 0
+            if rateChanged && course.lessons.contains(where: { !$0.isCompleted }) {
+                pendingRate = hourlyRate
+                pendingOldRate = course.hourlyRate
+                showRateChangeConfirmation = true
+                return
             }
+            applyAllChanges(course: course)
         } else {
+            let trimmedSubject = subject.trimmingCharacters(in: .whitespaces)
             let newCourse = Course(
                 name: trimmedName,
                 colorHex: colorHex,
@@ -122,6 +141,40 @@ struct CourseFormView: View {
             )
             modelContext.insert(newCourse)
         }
+        dismiss()
+    }
+
+    private func applyAllChanges(course: Course, updateFutureLessons: Bool = false) {
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let trimmedSubject = subject.trimmingCharacters(in: .whitespaces)
+        let oldTotalLessons = course.totalLessons
+        let needsCalendarSync = course.name != trimmedName || course.subject != trimmedSubject
+        let needsSequenceResync = oldTotalLessons != totalLessons
+
+        course.name = trimmedName
+        course.colorHex = colorHex
+        course.notes = notes
+        course.subject = trimmedSubject
+        course.totalHours = totalHours
+        course.totalLessons = totalLessons
+        course.hourlyRate = hourlyRate
+
+        if updateFutureLessons {
+            let futureLessons = course.lessons.filter {
+                !$0.isCompleted && $0.startTime > .now && !$0.isManualPrice
+            }
+            for lesson in futureLessons {
+                let minutes = DateHelper.calendar.dateComponents(
+                    [.minute], from: lesson.startTime, to: lesson.endTime
+                ).minute ?? 0
+                lesson.priceOverride = (hourlyRate * Double(minutes) / 60.0 * 100).rounded() / 100
+            }
+        }
+
+        if needsCalendarSync || needsSequenceResync {
+            try? CalendarSyncService.shared.syncLessonsForCourse(course)
+        }
+
         dismiss()
     }
 }
