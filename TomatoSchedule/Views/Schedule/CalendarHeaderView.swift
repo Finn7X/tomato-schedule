@@ -6,6 +6,10 @@ struct CalendarHeaderView: View {
     @Binding var isExpanded: Bool
     let lessonCounts: [Date: Int]
 
+    private enum SlideDirection { case backward, forward, none }
+    @State private var slideDirection: SlideDirection = .none
+    @State private var isAnimating = false
+
     private let weekdayHeaders = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
     var body: some View {
@@ -48,19 +52,63 @@ struct CalendarHeaderView: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 4)
 
-            // Calendar body
-            if isExpanded {
-                MonthGridView(
-                    selectedDate: $selectedDate,
-                    displayedMonth: displayedMonth,
-                    lessonCounts: lessonCounts
-                )
-            } else {
-                WeekStripView(
-                    selectedDate: $selectedDate,
-                    lessonCounts: lessonCounts
-                )
+            // Calendar body with swipe gesture
+            Group {
+                if isExpanded {
+                    MonthGridView(
+                        selectedDate: $selectedDate,
+                        displayedMonth: displayedMonth,
+                        lessonCounts: lessonCounts
+                    )
+                    .id(displayedMonth)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: slideDirection == .backward ? .leading : .trailing),
+                        removal: .move(edge: slideDirection == .backward ? .trailing : .leading)
+                    ))
+                } else {
+                    WeekStripView(
+                        selectedDate: $selectedDate,
+                        lessonCounts: lessonCounts
+                    )
+                    .id(DateHelper.weekRange(for: selectedDate).start)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: slideDirection == .backward ? .leading : .trailing),
+                        removal: .move(edge: slideDirection == .backward ? .trailing : .leading)
+                    ))
+                }
             }
+            .clipped()
+            .gesture(
+                DragGesture(minimumDistance: 30)
+                    .onEnded { value in
+                        guard !isAnimating else { return }
+                        let horizontal = value.translation.width
+                        let vertical = value.translation.height
+                        guard abs(horizontal) > 50, abs(horizontal) > abs(vertical) else { return }
+
+                        isAnimating = true
+                        if horizontal < 0 {
+                            // Left swipe → previous
+                            slideDirection = .backward
+                            if isExpanded {
+                                moveMonth(-1)
+                            } else {
+                                moveWeek(-1)
+                            }
+                        } else {
+                            // Right swipe → next
+                            slideDirection = .forward
+                            if isExpanded {
+                                moveMonth(1)
+                            } else {
+                                moveWeek(1)
+                            }
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            isAnimating = false
+                        }
+                    }
+            )
 
             // Expand/collapse chevron
             Button {
@@ -95,6 +143,7 @@ struct CalendarHeaderView: View {
     }
 
     private func moveMonth(_ offset: Int) {
+        slideDirection = offset < 0 ? .backward : .forward
         if let newMonth = DateHelper.calendar.date(byAdding: .month, value: offset, to: displayedMonth) {
             withAnimation(.easeInOut(duration: 0.2)) {
                 displayedMonth = newMonth
@@ -102,6 +151,19 @@ struct CalendarHeaderView: View {
                 if selectedDate < range.start || selectedDate >= range.end {
                     selectedDate = range.start
                 }
+            }
+        }
+    }
+
+    private func moveWeek(_ offset: Int) {
+        guard let newDate = DateHelper.calendar.date(byAdding: .day, value: offset * 7, to: selectedDate) else { return }
+        let oldMonth = DateHelper.calendar.dateComponents([.year, .month], from: selectedDate)
+        let newMonth = DateHelper.calendar.dateComponents([.year, .month], from: newDate)
+        let needsMonthSync = oldMonth != newMonth
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedDate = newDate
+            if needsMonthSync {
+                displayedMonth = newDate
             }
         }
     }
