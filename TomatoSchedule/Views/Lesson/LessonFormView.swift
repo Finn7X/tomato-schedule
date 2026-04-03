@@ -19,7 +19,7 @@ struct LessonFormView: View {
     @State private var lessonNumber: Int = 0
     @State private var isCompleted: Bool = false
     @State private var location: String = ""
-    @State private var isPriceOverridden: Bool = false
+    @State private var isManualPrice: Bool = false
     @State private var priceOverride: Double = 0
 
     var isEditing: Bool { lesson != nil }
@@ -92,13 +92,13 @@ struct LessonFormView: View {
 
                     // Pricing
                     VStack(alignment: .leading, spacing: 4) {
-                        Picker("课时费用", selection: $isPriceOverridden) {
+                        Picker("课时费用", selection: $isManualPrice) {
                             Text("自动计算").tag(false)
                             Text("自定义").tag(true)
                         }
                         .pickerStyle(.segmented)
 
-                        if isPriceOverridden {
+                        if isManualPrice {
                             HStack {
                                 Text("¥")
                                 TextField("金额", value: $priceOverride, format: .number)
@@ -107,11 +107,24 @@ struct LessonFormView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                        } else if let rate = selectedCourse?.hourlyRate, rate > 0 {
-                            let auto = rate * Double(max(DateHelper.calendar.dateComponents([.minute], from: startTime, to: endTime).minute ?? 60, 1)) / 60.0
-                            Text("¥\(Int((auto * 100).rounded() / 100)) (¥\(Int(rate))/h)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        } else if isEditing, let lesson {
+                            let snapshot = lesson.priceOverride
+                            if snapshot > 0 {
+                                Text("\(formatPrice(snapshot)) (已锁定)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("未定价")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            if let rate = selectedCourse?.hourlyRate, rate > 0 {
+                                let auto = (rate * Double(durationMinutes) / 60.0 * 100).rounded() / 100
+                                Text("\(formatPrice(auto)) (\(formatPrice(rate))/h)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -153,12 +166,32 @@ struct LessonFormView: View {
                     lessonNumber = lesson.lessonNumber
                     isCompleted = lesson.isCompleted
                     location = lesson.location
-                    isPriceOverridden = lesson.isPriceOverridden
+                    isManualPrice = lesson.isManualPrice
                     priceOverride = lesson.priceOverride
-                    showAdvanced = lesson.lessonNumber > 0 || lesson.isCompleted || !lesson.location.isEmpty || lesson.isPriceOverridden
+                    showAdvanced = lesson.lessonNumber > 0 || lesson.isCompleted || !lesson.location.isEmpty || lesson.isManualPrice
                 }
             }
         }
+    }
+
+    private func freezePrice(for lesson: Lesson) {
+        guard !lesson.isPriceOverridden else { return }
+        let rate = lesson.course?.hourlyRate ?? 0
+        let minutes = DateHelper.calendar.dateComponents(
+            [.minute], from: lesson.startTime, to: lesson.endTime
+        ).minute ?? 0
+        let price = rate > 0 ? (rate * Double(minutes) / 60.0 * 100).rounded() / 100 : 0
+        lesson.priceOverride = price
+        lesson.isPriceOverridden = true
+        lesson.isManualPrice = false
+    }
+
+    private func formatPrice(_ p: Double) -> String {
+        p == p.rounded() ? "¥\(Int(p))" : String(format: "¥%.1f", p)
+    }
+
+    private var durationMinutes: Int {
+        max(DateHelper.calendar.dateComponents([.minute], from: startTime, to: endTime).minute ?? 60, 1)
     }
 
     private func save() {
@@ -177,8 +210,21 @@ struct LessonFormView: View {
             lesson.lessonNumber = lessonNumber
             lesson.isCompleted = isCompleted
             lesson.location = location.trimmingCharacters(in: .whitespaces)
-            lesson.isPriceOverridden = isPriceOverridden
-            lesson.priceOverride = priceOverride
+
+            let wasManual = lesson.isManualPrice
+            lesson.isManualPrice = isManualPrice
+            if isManualPrice {
+                lesson.isPriceOverridden = true
+                lesson.priceOverride = priceOverride
+            } else if wasManual && !isManualPrice {
+                let rate = selectedCourse.hourlyRate
+                let minutes = DateHelper.calendar.dateComponents(
+                    [.minute], from: actualStart, to: actualEnd
+                ).minute ?? 0
+                let price = rate > 0 ? (rate * Double(minutes) / 60.0 * 100).rounded() / 100 : 0
+                lesson.priceOverride = price
+                lesson.isPriceOverridden = true
+            }
         } else {
             let newLesson = Lesson(
                 course: selectedCourse,
@@ -191,6 +237,13 @@ struct LessonFormView: View {
                 isCompleted: isCompleted,
                 location: location.trimmingCharacters(in: .whitespaces)
             )
+            if isManualPrice {
+                newLesson.isPriceOverridden = true
+                newLesson.isManualPrice = true
+                newLesson.priceOverride = priceOverride
+            } else {
+                freezePrice(for: newLesson)
+            }
             modelContext.insert(newLesson)
             try? CalendarSyncService.shared.syncLesson(newLesson)
         }
