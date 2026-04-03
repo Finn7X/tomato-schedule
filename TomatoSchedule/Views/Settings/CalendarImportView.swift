@@ -258,6 +258,18 @@ struct CalendarImportView: View {
         step = .mapAndImport
     }
 
+    private func freezePrice(for lesson: Lesson) {
+        guard !lesson.isPriceOverridden else { return }
+        let rate = lesson.course?.hourlyRate ?? 0
+        let minutes = DateHelper.calendar.dateComponents(
+            [.minute], from: lesson.startTime, to: lesson.endTime
+        ).minute ?? 0
+        let price = rate > 0 ? (rate * Double(minutes) / 60.0 * 100).rounded() / 100 : 0
+        lesson.priceOverride = price
+        lesson.isPriceOverridden = true
+        lesson.isManualPrice = false
+    }
+
     private func performImport() {
         var importedCount = 0
 
@@ -297,6 +309,7 @@ struct CalendarImportView: View {
                     notes: event.notes ?? "",
                     location: event.location ?? ""
                 )
+                freezePrice(for: lesson)
                 modelContext.insert(lesson)
                 importedCount += 1
             }
