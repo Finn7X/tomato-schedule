@@ -34,6 +34,7 @@ struct ScheduleView: View {
     @State private var displayedMonth: Date = .now
     @State private var isExpanded: Bool = true
     @State private var showingAddLesson: Bool = false
+    @State private var showingBatchLesson: Bool = false
     @State private var editingLesson: Lesson?
     @AppStorage("showIncomeInCourseList") private var showIncome = true
 
@@ -116,7 +117,14 @@ struct ScheduleView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button { showingAddLesson = true } label: {
+                    Menu {
+                        Button { showingAddLesson = true } label: {
+                            Label("添加单节课时", systemImage: "plus")
+                        }
+                        Button { showingBatchLesson = true } label: {
+                            Label("批量排课", systemImage: "calendar.badge.plus")
+                        }
+                    } label: {
                         Image(systemName: "plus")
                     }
                 }
@@ -130,6 +138,9 @@ struct ScheduleView: View {
             }
             .sheet(isPresented: $showingAddLesson) {
                 LessonFormView(initialDate: selectedDate)
+            }
+            .sheet(isPresented: $showingBatchLesson) {
+                BatchLessonFormView()
             }
             .sheet(item: $editingLesson) { lesson in
                 LessonFormView(lesson: lesson, initialDate: lesson.date)
