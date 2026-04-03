@@ -24,6 +24,9 @@ final class Lesson {
     var isPriceOverridden: Bool
     var priceOverride: Double
 
+    // V5 价格语义
+    var isManualPrice: Bool
+
     init(
         course: Course,
         studentName: String = "",
@@ -49,6 +52,7 @@ final class Lesson {
         self.calendarEventId = ""
         self.isPriceOverridden = false
         self.priceOverride = 0
+        self.isManualPrice = false
     }
 
     var effectivePrice: Double {
@@ -60,8 +64,9 @@ final class Lesson {
 
     var priceDisplayText: String? {
         let p = effectivePrice
-        guard p > 0 || isPriceOverridden else { return nil }
-        if isPriceOverridden && p == 0 { return "免费" }
+        if isManualPrice && p == 0 { return "免费" }
+        if !isManualPrice && p == 0 { return nil }
+        guard p > 0 else { return nil }
         return p == p.rounded() ? "¥\(Int(p))" : String(format: "¥%.1f", p)
     }
 
