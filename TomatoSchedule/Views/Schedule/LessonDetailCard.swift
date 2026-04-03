@@ -75,9 +75,6 @@ struct LessonDetailCard: View {
         if showIncome, let price = lesson.priceDisplayText {
             parts.append(price)
         }
-        if let seq = lesson.headerSequenceText {
-            parts.append(seq)
-        }
         return parts
     }
 }

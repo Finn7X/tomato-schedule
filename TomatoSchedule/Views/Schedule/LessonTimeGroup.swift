@@ -22,7 +22,7 @@ struct LessonTimeGroup: View {
 
                     Spacer()
 
-                    if let seq = lesson.headerSequenceText {
+                    if let seq = lesson.displaySequenceText {
                         Text(seq)
                             .font(.caption)
                             .foregroundStyle(.secondary)

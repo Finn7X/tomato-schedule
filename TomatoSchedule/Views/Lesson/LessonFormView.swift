@@ -75,7 +75,7 @@ struct LessonFormView: View {
                         .lineLimit(2...4)
                 }
 
-                DisclosureGroup("更多设置", isExpanded: $showAdvanced) {
+                Section("课次") {
                     HStack {
                         Text("第几节课")
                         Spacer()
@@ -87,6 +87,9 @@ struct LessonFormView: View {
                             Text("/ \(total)").foregroundStyle(.secondary)
                         }
                     }
+                }
+
+                DisclosureGroup("更多设置", isExpanded: $showAdvanced) {
                     Toggle("已完成", isOn: $isCompleted)
                     TextField("上课地点（可选）", text: $location)
 

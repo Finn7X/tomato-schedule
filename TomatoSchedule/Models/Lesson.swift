@@ -86,6 +86,22 @@ final class Lesson {
         return "\(lessonNumber)/\(total)次"
     }
 
+    /// 课次展示文本，已有值优先，空值自动推导
+    var displaySequenceText: String? {
+        let number: Int
+        if lessonNumber > 0 {
+            number = lessonNumber
+        } else if let auto = course?.autoIndex(for: self) {
+            number = auto
+        } else {
+            return nil
+        }
+        if let total = course?.totalLessons, total > 0 {
+            return "第\(number)/\(total)节"
+        }
+        return "第\(number)节"
+    }
+
     var timeRangeText: String {
         "\(DateHelper.timeString(startTime))-\(DateHelper.timeString(endTime))"
     }

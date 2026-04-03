@@ -214,8 +214,8 @@ final class CalendarSyncService: ObservableObject {
         event.location = lesson.location.isEmpty ? nil : lesson.location
 
         var noteParts: [String] = []
-        if let seq = lesson.headerSequenceText {
-            noteParts.append("第\(seq)")
+        if let seq = lesson.displaySequenceText {
+            noteParts.append(seq)
         }
         if lesson.isCompleted {
             noteParts.append("✅ 已完成")

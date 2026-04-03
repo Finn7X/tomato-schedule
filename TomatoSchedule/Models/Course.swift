@@ -59,4 +59,13 @@ final class Course {
         guard totalHours > 0 else { return nil }
         return String(format: "%.1f/%.1fh", completedHours, totalHours)
     }
+
+    var sortedLessons: [Lesson] {
+        lessons.sorted { $0.startTime < $1.startTime }
+    }
+
+    func autoIndex(for lesson: Lesson) -> Int? {
+        guard let idx = sortedLessons.firstIndex(where: { $0.id == lesson.id }) else { return nil }
+        return idx + 1
+    }
 }
