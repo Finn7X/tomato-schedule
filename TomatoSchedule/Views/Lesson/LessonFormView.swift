@@ -66,8 +66,12 @@ struct LessonFormView: View {
 
                 Section("时间") {
                     DatePicker("日期", selection: $date, displayedComponents: .date)
-                    DatePicker("开始时间", selection: $startTime, displayedComponents: .hourAndMinute)
-                    DatePicker("结束时间", selection: $endTime, displayedComponents: .hourAndMinute)
+                    TimeSlotPicker(
+                        startTime: $startTime,
+                        endTime: $endTime,
+                        date: date,
+                        forcePickerMode: isEditing && !canUseGrid
+                    )
                 }
 
                 Section("备注") {
@@ -191,6 +195,18 @@ struct LessonFormView: View {
 
     private func formatPrice(_ p: Double) -> String {
         p == p.rounded() ? "¥\(Int(p))" : String(format: "¥%.1f", p)
+    }
+
+    private var canUseGrid: Bool {
+        let cal = DateHelper.calendar
+        let startH = cal.component(.hour, from: startTime)
+        let startM = cal.component(.minute, from: startTime)
+        let endH = cal.component(.hour, from: endTime)
+        let endM = cal.component(.minute, from: endTime)
+        let startAbsMin = startH * 60 + startM
+        let endAbsMin = endH * 60 + endM
+        return startAbsMin >= 8 * 60 && endAbsMin <= 22 * 60 &&
+               startAbsMin % 30 == 0 && endAbsMin % 30 == 0
     }
 
     private var durationMinutes: Int {
