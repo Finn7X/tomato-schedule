@@ -105,7 +105,7 @@ struct BatchLessonFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("创建 \(generatedDates.count) 节课") { createLessons() }
-                        .disabled(selectedCourse == nil || generatedDates.isEmpty)
+                        .disabled(selectedCourse == nil || generatedDates.isEmpty || normalizeStudentName(studentName).isEmpty)
                 }
             }
         }
@@ -137,7 +137,7 @@ struct BatchLessonFormView: View {
 
     private var studentSection: some View {
         Section("学生") {
-            TextField("学生姓名（可选）", text: $studentName)
+            TextField("学生姓名（必填）", text: $studentName)
         }
     }
 
@@ -206,7 +206,7 @@ struct BatchLessonFormView: View {
                 Text("请选择重复星期")
                     .foregroundStyle(.secondary)
             } else {
-                let startNumber = selectedCourse.map { nextLessonNumber(for: $0) } ?? 1
+                let progressMap = batchStudentProgress(studentName: studentName)
 
                 ForEach(Array(generatedDates.enumerated()), id: \.offset) { index, date in
                     HStack {
@@ -222,9 +222,11 @@ struct BatchLessonFormView: View {
                         Text("\(DateHelper.timeString(startTime))-\(DateHelper.timeString(endTime))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text("第\(startNumber + index)节")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        if let studentIdx = progressMap[date] {
+                            Text("第\(studentIdx)节")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
@@ -244,6 +246,43 @@ struct BatchLessonFormView: View {
         }
     }
 
+    // MARK: - Student Progress
+
+    /// Pure function: compute student lesson index for each generated date
+    /// Safe to call from body — no @State mutation
+    private func batchStudentProgress(studentName: String) -> [Date: Int] {
+        let key = normalizeStudentName(studentName)
+        guard !key.isEmpty else { return [:] }
+
+        // 1. Existing lessons for this student
+        let existing: [(startTime: Date, dateKey: Date?, sortTail: String)] = allLessons
+            .filter { normalizeStudentName($0.studentName) == key }
+            .map { ($0.startTime, nil, $0.id.uuidString) }
+
+        // 2. Pending lessons (use "~" prefix so pending sorts after existing at same startTime)
+        let pending: [(startTime: Date, dateKey: Date?, sortTail: String)] = generatedDates
+            .enumerated()
+            .map { i, date in
+                let t = DateHelper.combine(date: date, time: startTime)
+                return (t, date, "~pending-\(String(format: "%04d", i))")
+            }
+
+        // 3. Merge and sort
+        let merged = (existing + pending).sorted {
+            if $0.startTime != $1.startTime { return $0.startTime < $1.startTime }
+            return $0.sortTail < $1.sortTail
+        }
+
+        // 4. Extract pending items' positions
+        var result: [Date: Int] = [:]
+        for (sortedIdx, item) in merged.enumerated() {
+            if let genDate = item.dateKey {
+                result[genDate] = sortedIdx + 1
+            }
+        }
+        return result
+    }
+
     // MARK: - Create Lessons
 
     private func createLessons() {
@@ -256,7 +295,7 @@ struct BatchLessonFormView: View {
 
             let lesson = Lesson(
                 course: course,
-                studentName: studentName.trimmingCharacters(in: .whitespaces),
+                studentName: normalizeStudentName(studentName),
                 date: DateHelper.startOfDay(date),
                 startTime: actualStart,
                 endTime: actualEnd,
