@@ -305,7 +305,8 @@ struct BatchLessonFormView: View {
             )
             freezePrice(for: lesson)
             modelContext.insert(lesson)
-            try? CalendarSyncService.shared.syncLesson(lesson)
+            let idx = computeStudentIndex(for: lesson, existingLessons: allLessons)
+            try? CalendarSyncService.shared.syncLesson(lesson, studentIndex: idx)
             number += 1
         }
         dismiss()

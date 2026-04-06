@@ -289,10 +289,12 @@ struct LessonFormView: View {
                 freezePrice(for: newLesson)
             }
             modelContext.insert(newLesson)
-            try? CalendarSyncService.shared.syncLesson(newLesson)
+            let newIdx = computeStudentIndex(for: newLesson, existingLessons: allLessons)
+            try? CalendarSyncService.shared.syncLesson(newLesson, studentIndex: newIdx)
         }
         if let lesson {
-            try? CalendarSyncService.shared.syncLesson(lesson)
+            let editIdx = computeStudentIndex(for: lesson, existingLessons: allLessons)
+            try? CalendarSyncService.shared.syncLesson(lesson, studentIndex: editIdx)
         }
         dismiss()
     }

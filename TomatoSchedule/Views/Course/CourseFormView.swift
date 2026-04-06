@@ -4,6 +4,7 @@ import SwiftData
 struct CourseFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var allLessons: [Lesson]
 
     let course: Course?
 
@@ -172,7 +173,7 @@ struct CourseFormView: View {
         }
 
         if needsCalendarSync || needsSequenceResync {
-            try? CalendarSyncService.shared.syncLessonsForCourse(course)
+            try? CalendarSyncService.shared.syncLessonsForCourse(course, allLessons: Array(allLessons))
         }
 
         dismiss()

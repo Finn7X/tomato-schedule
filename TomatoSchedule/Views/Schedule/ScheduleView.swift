@@ -192,7 +192,8 @@ struct ScheduleView: View {
                             lesson.priceOverride = lesson.effectivePrice
                             lesson.isPriceOverridden = true
                         }
-                        try? CalendarSyncService.shared.syncLesson(lesson)
+                        let idx = computeStudentIndex(for: lesson, existingLessons: allLessons)
+                        try? CalendarSyncService.shared.syncLesson(lesson, studentIndex: idx)
                     } label: {
                         Image(systemName: lesson.isCompleted ? "arrow.uturn.backward" : "checkmark")
                     }

@@ -77,10 +77,11 @@ final class CalendarSyncService: ObservableObject {
     // MARK: - Quick Export (write-only)
 
     func quickExportAll(_ lessons: [Lesson]) throws -> Int {
+        let indexMap = Self.buildStudentIndexMap(lessons)
         var count = 0
         for lesson in lessons {
             let event = EKEvent(eventStore: store)
-            populateEvent(event, from: lesson)
+            populateEvent(event, from: lesson, studentIndex: indexMap[lesson.id])
             event.calendar = store.defaultCalendarForNewEvents
             try store.save(event, span: .thisEvent, commit: false)
             count += 1
@@ -94,6 +95,7 @@ final class CalendarSyncService: ObservableObject {
     func syncAllLessons(_ lessons: [Lesson]) throws -> Int {
         let calendar = try getOrCreateAppCalendar()
         let allEvents = fetchAllEvents(in: calendar)
+        let indexMap = Self.buildStudentIndexMap(lessons)
 
         // Build URL index: lesson UUID → EKEvent
         var urlIndex: [UUID: EKEvent] = [:]
@@ -110,13 +112,13 @@ final class CalendarSyncService: ObservableObject {
             let existing = urlIndex[lesson.id] ?? findEvent(for: lesson, in: calendar)
 
             if let event = existing {
-                populateEvent(event, from: lesson)
+                populateEvent(event, from: lesson, studentIndex: indexMap[lesson.id])
                 try store.save(event, span: .thisEvent, commit: false)
                 lesson.calendarEventId = event.eventIdentifier
                 matchedIds.insert(event.eventIdentifier)
             } else {
                 let event = EKEvent(eventStore: store)
-                populateEvent(event, from: lesson)
+                populateEvent(event, from: lesson, studentIndex: indexMap[lesson.id])
                 event.calendar = calendar
                 event.url = buildEventURL(for: lesson)
                 try store.save(event, span: .thisEvent, commit: false)
@@ -136,17 +138,17 @@ final class CalendarSyncService: ObservableObject {
         return count
     }
 
-    func syncLesson(_ lesson: Lesson) throws {
+    func syncLesson(_ lesson: Lesson, studentIndex: Int? = nil) throws {
         guard syncEnabled else { return }
         let calendar = try getOrCreateAppCalendar()
 
         if let existing = findEvent(for: lesson, in: calendar) {
-            populateEvent(existing, from: lesson)
+            populateEvent(existing, from: lesson, studentIndex: studentIndex)
             try store.save(existing, span: .thisEvent, commit: true)
             lesson.calendarEventId = existing.eventIdentifier
         } else {
             let event = EKEvent(eventStore: store)
-            populateEvent(event, from: lesson)
+            populateEvent(event, from: lesson, studentIndex: studentIndex)
             event.calendar = calendar
             event.url = buildEventURL(for: lesson)
             try store.save(event, span: .thisEvent, commit: true)
@@ -164,10 +166,11 @@ final class CalendarSyncService: ObservableObject {
         lesson.calendarEventId = ""
     }
 
-    func syncLessonsForCourse(_ course: Course) throws {
+    func syncLessonsForCourse(_ course: Course, allLessons: [Lesson]) throws {
         guard syncEnabled else { return }
+        let indexMap = Self.buildStudentIndexMap(allLessons)
         for lesson in course.lessons {
-            try syncLesson(lesson)
+            try syncLesson(lesson, studentIndex: indexMap[lesson.id])
         }
     }
 
@@ -203,7 +206,7 @@ final class CalendarSyncService: ObservableObject {
 
     // MARK: - Private helpers
 
-    private func populateEvent(_ event: EKEvent, from lesson: Lesson) {
+    private func populateEvent(_ event: EKEvent, from lesson: Lesson, studentIndex: Int? = nil) {
         var title = lesson.course?.name ?? "课时"
         if !lesson.studentName.isEmpty {
             title += " · \(lesson.studentName)"
@@ -214,8 +217,13 @@ final class CalendarSyncService: ObservableObject {
         event.location = lesson.location.isEmpty ? nil : lesson.location
 
         var noteParts: [String] = []
+        // Student dimension (primary)
+        if let idx = studentIndex {
+            noteParts.append("学生第\(idx)节")
+        }
+        // Course plan dimension (secondary)
         if let seq = lesson.displaySequenceText {
-            noteParts.append(seq)
+            noteParts.append("计划\(seq)")
         }
         if lesson.isCompleted {
             noteParts.append("✅ 已完成")
@@ -228,6 +236,28 @@ final class CalendarSyncService: ObservableObject {
         if event.url == nil {
             event.url = buildEventURL(for: lesson)
         }
+    }
+
+    // MARK: - Student Index Map
+
+    static func buildStudentIndexMap(_ lessons: [Lesson]) -> [UUID: Int] {
+        var groups: [String: [Lesson]] = [:]
+        for lesson in lessons {
+            let key = normalizeStudentName(lesson.studentName)
+            guard !key.isEmpty else { continue }
+            groups[key, default: []].append(lesson)
+        }
+        var result: [UUID: Int] = [:]
+        for (_, group) in groups {
+            let sorted = group.sorted {
+                if $0.startTime != $1.startTime { return $0.startTime < $1.startTime }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+            for (i, lesson) in sorted.enumerated() {
+                result[lesson.id] = i + 1
+            }
+        }
+        return result
     }
 
     private func findEvent(for lesson: Lesson, in calendar: EKCalendar) -> EKEvent? {
