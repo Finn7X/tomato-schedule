@@ -206,9 +206,9 @@ struct LessonFormView: View {
         }
     }
 
-    private func freezePrice(for lesson: Lesson) {
+    /// rate 显式传入，避免在未插入 modelContext 的 lesson 上访问 .course 关系（iOS 17 会崩溃）
+    private func freezePrice(for lesson: Lesson, rate: Double) {
         guard !lesson.isPriceOverridden else { return }
-        let rate = lesson.course?.hourlyRate ?? 0
         let minutes = DateHelper.calendar.dateComponents(
             [.minute], from: lesson.startTime, to: lesson.endTime
         ).minute ?? 0
@@ -286,7 +286,7 @@ struct LessonFormView: View {
                 newLesson.isManualPrice = true
                 newLesson.priceOverride = priceOverride
             } else {
-                freezePrice(for: newLesson)
+                freezePrice(for: newLesson, rate: selectedCourse.hourlyRate)
             }
             // 先计算 studentIndex（此时 @Query allLessons 还未被 insert 触发刷新）
             let newIdx = computeStudentIndex(for: newLesson, existingLessons: Array(allLessons))

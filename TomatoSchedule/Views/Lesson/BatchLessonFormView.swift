@@ -72,9 +72,8 @@ struct BatchLessonFormView: View {
 
     // MARK: - Price Freeze
 
-    private func freezePrice(for lesson: Lesson) {
+    private func freezePrice(for lesson: Lesson, rate: Double) {
         guard !lesson.isPriceOverridden else { return }
-        let rate = lesson.course?.hourlyRate ?? 0
         let minutes = DateHelper.calendar.dateComponents(
             [.minute], from: lesson.startTime, to: lesson.endTime
         ).minute ?? 0
@@ -303,7 +302,7 @@ struct BatchLessonFormView: View {
                 lessonNumber: number,
                 location: location.trimmingCharacters(in: .whitespaces)
             )
-            freezePrice(for: lesson)
+            freezePrice(for: lesson, rate: course.hourlyRate)
             let idx = computeStudentIndex(for: lesson, existingLessons: Array(allLessons))
             modelContext.insert(lesson)
             try? CalendarSyncService.shared.syncLesson(lesson, studentIndex: idx)
