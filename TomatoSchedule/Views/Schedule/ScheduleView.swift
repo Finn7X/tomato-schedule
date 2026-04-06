@@ -228,7 +228,7 @@ struct ScheduleView: View {
                     if offset > 60 && isExpanded {
                         withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
                     }
-                    if offset < 10 && !isExpanded {
+                    if offset < -10 && !isExpanded {
                         withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
                     }
                 }
