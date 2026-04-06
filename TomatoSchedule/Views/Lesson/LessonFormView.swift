@@ -288,12 +288,13 @@ struct LessonFormView: View {
             } else {
                 freezePrice(for: newLesson)
             }
+            // 先计算 studentIndex（此时 @Query allLessons 还未被 insert 触发刷新）
+            let newIdx = computeStudentIndex(for: newLesson, existingLessons: Array(allLessons))
             modelContext.insert(newLesson)
-            let newIdx = computeStudentIndex(for: newLesson, existingLessons: allLessons)
             try? CalendarSyncService.shared.syncLesson(newLesson, studentIndex: newIdx)
         }
         if let lesson {
-            let editIdx = computeStudentIndex(for: lesson, existingLessons: allLessons)
+            let editIdx = computeStudentIndex(for: lesson, existingLessons: Array(allLessons))
             try? CalendarSyncService.shared.syncLesson(lesson, studentIndex: editIdx)
         }
         dismiss()
