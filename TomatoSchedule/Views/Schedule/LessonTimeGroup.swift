@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LessonTimeGroup: View {
     let lesson: Lesson
+    let allLessons: [Lesson]
     var onEdit: () -> Void = {}
 
     @State private var isExpanded: Bool = true
@@ -22,8 +23,8 @@ struct LessonTimeGroup: View {
 
                     Spacer()
 
-                    if let seq = lesson.displaySequenceText {
-                        Text(seq)
+                    if let progress = studentProgress(for: lesson, allLessons: allLessons) {
+                        Text("第\(progress.lessonIndex)节")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -40,7 +41,7 @@ struct LessonTimeGroup: View {
 
             // Detail card
             if isExpanded {
-                LessonDetailCard(lesson: lesson)
+                LessonDetailCard(lesson: lesson, allLessons: allLessons)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 10)
                     .onTapGesture { onEdit() }

@@ -172,7 +172,7 @@ struct ScheduleView: View {
     private var lessonList: some View {
         List {
             ForEach(lessonsForSelectedDate) { lesson in
-                LessonTimeGroup(lesson: lesson) {
+                LessonTimeGroup(lesson: lesson, allLessons: allLessons) {
                     editingLesson = lesson
                 }
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))

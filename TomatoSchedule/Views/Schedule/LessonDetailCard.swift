@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LessonDetailCard: View {
     let lesson: Lesson
+    let allLessons: [Lesson]
     @AppStorage("showIncomeInCourseList") private var showIncome = true
 
     private var courseColor: Color {
@@ -36,6 +37,23 @@ struct LessonDetailCard: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+                // Student progress
+                if let progress = studentProgress(for: lesson, allLessons: allLessons) {
+                    HStack(spacing: 0) {
+                        Text("第\(progress.lessonIndex)节")
+                        Text(" · ")
+                        let startH = Int(progress.hourStart) + 1
+                        let endH = Int(progress.hourEnd.rounded(.up))
+                        if startH == endH {
+                            Text("第\(startH)小时")
+                        } else {
+                            Text("第\(startH)-\(endH)小时")
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
 
                 // Subject + progress (only if data exists)
                 let parts = progressParts
