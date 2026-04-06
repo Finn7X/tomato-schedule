@@ -1,6 +1,48 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - iOS 17 scroll offset observer (UIKit KVO on underlying UIScrollView)
+
+private struct ScrollOffsetObserver: UIViewRepresentable {
+    let onOffsetChange: (CGFloat) -> Void
+
+    func makeUIView(context: Context) -> UIView {
+        let view = _IntrospectionView()
+        view.onOffsetChange = onOffsetChange
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+
+    private class _IntrospectionView: UIView {
+        var onOffsetChange: ((CGFloat) -> Void)?
+        private var observation: NSKeyValueObservation?
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            guard window != nil, observation == nil else { return }
+            // Walk up to find UIScrollView (List uses UICollectionView which is a UIScrollView)
+            var current: UIView? = self
+            while let view = current {
+                if let sv = view as? UIScrollView {
+                    observation = sv.observe(\.contentOffset, options: .new) { [weak self] scrollView, _ in
+                        DispatchQueue.main.async {
+                            self?.onOffsetChange?(scrollView.contentOffset.y)
+                        }
+                    }
+                    return
+                }
+                current = view.superview
+            }
+        }
+
+        override func willMove(toWindow newWindow: UIWindow?) {
+            super.willMove(toWindow: newWindow)
+            if newWindow == nil { observation?.invalidate(); observation = nil }
+        }
+    }
+}
+
 // MARK: - Scroll-driven calendar fold modifier (iOS 17 + 18 compatible)
 
 private struct ScrollCalendarFoldModifier: ViewModifier {
@@ -20,8 +62,19 @@ private struct ScrollCalendarFoldModifier: ViewModifier {
                     }
                 }
         } else {
-            // iOS 17: manual chevron toggle only, no scroll tracking
+            // iOS 17: use UIKit KVO to observe the underlying UIScrollView
             content
+                .background(
+                    ScrollOffsetObserver { offset in
+                        if offset > 60 && isExpanded {
+                            withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
+                        }
+                        if offset < 10 && !isExpanded {
+                            withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
+                        }
+                    }
+                    .frame(width: 0, height: 0)
+                )
         }
     }
 }
