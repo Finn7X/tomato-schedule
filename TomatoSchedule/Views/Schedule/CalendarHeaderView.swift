@@ -88,20 +88,20 @@ struct CalendarHeaderView: View {
 
                         isAnimating = true
                         if horizontal < 0 {
-                            // Left swipe → previous
-                            slideDirection = .backward
-                            if isExpanded {
-                                moveMonth(-1)
-                            } else {
-                                moveWeek(-1)
-                            }
-                        } else {
-                            // Right swipe → next
+                            // Left swipe → next (content slides left, next page from right)
                             slideDirection = .forward
                             if isExpanded {
                                 moveMonth(1)
                             } else {
                                 moveWeek(1)
+                            }
+                        } else {
+                            // Right swipe → previous (content slides right, prev page from left)
+                            slideDirection = .backward
+                            if isExpanded {
+                                moveMonth(-1)
+                            } else {
+                                moveWeek(-1)
                             }
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -149,7 +149,13 @@ struct CalendarHeaderView: View {
                 displayedMonth = newMonth
                 let range = DateHelper.monthRange(for: newMonth)
                 if selectedDate < range.start || selectedDate >= range.end {
-                    selectedDate = range.start
+                    // Prefer today if it falls within the target month
+                    let today = Date.now
+                    if today >= range.start && today < range.end {
+                        selectedDate = today
+                    } else {
+                        selectedDate = range.start
+                    }
                 }
             }
         }
