@@ -25,7 +25,7 @@ final class Lesson {
     var priceOverride: Double
 
     // V5 价格语义
-    var isManualPrice: Bool
+    var isManualPrice: Bool = false
 
     init(
         course: Course,
