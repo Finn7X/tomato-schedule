@@ -288,27 +288,32 @@ struct IncomeView: View {
                                     .padding(.bottom, 8)
 
                                 ForEach(studentRanking) { item in
-                                    HStack(spacing: 10) {
-                                        Circle()
-                                            .fill(.secondary)
-                                            .frame(width: 10, height: 10)
-                                        Text(item.name)
-                                            .font(.subheadline)
-                                        Spacer()
-                                        Text("\(item.count)节")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        Text("¥\(Int(item.income))")
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                            .frame(width: 70, alignment: .trailing)
-                                        Text(String(format: "%.0f%%", item.percentage))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .frame(width: 36, alignment: .trailing)
+                                    NavigationLink {
+                                        StudentIncomeDetailView(studentName: item.name, initialMonth: referenceDate)
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            Circle()
+                                                .fill(.secondary)
+                                                .frame(width: 10, height: 10)
+                                            Text(item.name)
+                                                .font(.subheadline)
+                                            Spacer()
+                                            Text("\(item.count)节")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Text("¥\(Int(item.income))")
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                                .frame(width: 70, alignment: .trailing)
+                                            Text(String(format: "%.0f%%", item.percentage))
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .frame(width: 36, alignment: .trailing)
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.vertical, 6)
                                     }
-                                    .padding(.horizontal)
-                                    .padding(.vertical, 6)
+                                    .foregroundStyle(.primary)
                                 }
                             }
                         }
