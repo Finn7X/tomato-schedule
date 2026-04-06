@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - iOS 17 scroll offset observer (UIKit KVO on underlying UIScrollView)
+// MARK: - iOS 17 scroll offset observer (UIKit KVO inside List row → finds UIScrollView)
 
 private struct ScrollOffsetObserver: UIViewRepresentable {
     let onOffsetChange: (CGFloat) -> Void
@@ -18,16 +18,24 @@ private struct ScrollOffsetObserver: UIViewRepresentable {
         var onOffsetChange: ((CGFloat) -> Void)?
         private var observation: NSKeyValueObservation?
 
+        override func didMoveToSuperview() {
+            super.didMoveToSuperview()
+            trySetupObservation()
+        }
+
         override func didMoveToWindow() {
             super.didMoveToWindow()
-            guard window != nil, observation == nil else { return }
-            // Walk up to find UIScrollView (List uses UICollectionView which is a UIScrollView)
-            var current: UIView? = self
+            trySetupObservation()
+        }
+
+        private func trySetupObservation() {
+            guard observation == nil, window != nil else { return }
+            var current: UIView? = superview
             while let view = current {
-                if let sv = view as? UIScrollView {
-                    observation = sv.observe(\.contentOffset, options: .new) { [weak self] scrollView, _ in
+                if let scrollView = view as? UIScrollView {
+                    observation = scrollView.observe(\.contentOffset, options: .new) { [weak self] sv, _ in
                         DispatchQueue.main.async {
-                            self?.onOffsetChange?(scrollView.contentOffset.y)
+                            self?.onOffsetChange?(sv.contentOffset.y)
                         }
                     }
                     return
@@ -43,7 +51,7 @@ private struct ScrollOffsetObserver: UIViewRepresentable {
     }
 }
 
-// MARK: - Scroll-driven calendar fold modifier (iOS 17 + 18 compatible)
+// MARK: - Scroll-driven calendar fold modifier (iOS 18 only)
 
 private struct ScrollCalendarFoldModifier: ViewModifier {
     @Binding var isExpanded: Bool
@@ -62,19 +70,8 @@ private struct ScrollCalendarFoldModifier: ViewModifier {
                     }
                 }
         } else {
-            // iOS 17: use UIKit KVO to observe the underlying UIScrollView
+            // iOS 17: observer placed inside List row (see lessonList)
             content
-                .background(
-                    ScrollOffsetObserver { offset in
-                        if offset > 60 && isExpanded {
-                            withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
-                        }
-                        if offset < 10 && !isExpanded {
-                            withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
-                        }
-                    }
-                    .frame(width: 0, height: 0)
-                )
         }
     }
 }
@@ -224,6 +221,22 @@ struct ScheduleView: View {
 
     private var lessonList: some View {
         List {
+            // iOS 17: invisible row with KVO observer INSIDE List content
+            // Must be inside a row so the UIView is a descendant of UICollectionViewCell → UIScrollView
+            if #unavailable(iOS 18.0) {
+                ScrollOffsetObserver { offset in
+                    if offset > 60 && isExpanded {
+                        withAnimation(.easeInOut(duration: 0.3)) { isExpanded = false }
+                    }
+                    if offset < 10 && !isExpanded {
+                        withAnimation(.easeInOut(duration: 0.3)) { isExpanded = true }
+                    }
+                }
+                .frame(height: 0)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+            }
+
             ForEach(lessonsForSelectedDate) { lesson in
                 LessonTimeGroup(lesson: lesson, allLessons: allLessons) {
                     editingLesson = lesson
