@@ -5,6 +5,7 @@ struct LessonFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Course.name) private var courses: [Course]
+    @Query private var allLessons: [Lesson]
 
     let lesson: Lesson?
     let initialDate: Date
@@ -61,7 +62,34 @@ struct LessonFormView: View {
                 }
 
                 Section("学生") {
-                    TextField("学生姓名（可选）", text: $studentName)
+                    TextField(isEditing ? "学生姓名" : "学生姓名（必填）", text: $studentName)
+
+                    // Input suggestions from existing student names
+                    if !studentName.isEmpty {
+                        let inputKey = normalizeStudentName(studentName)
+                        let existingNames = Array(Set(allLessons.map { normalizeStudentName($0.studentName) }.filter { !$0.isEmpty })).sorted()
+                        let matches = existingNames.filter { $0.localizedCaseInsensitiveContains(inputKey) && $0 != inputKey }
+                        if !matches.isEmpty {
+                            ForEach(matches.prefix(5), id: \.self) { name in
+                                Button(name) { studentName = name }
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
+                    // Student progress preview
+                    let inputKey2 = normalizeStudentName(studentName)
+                    if !inputKey2.isEmpty {
+                        let studentLessons = allLessons.filter { normalizeStudentName($0.studentName) == inputKey2 }
+                        let existingCount = studentLessons.count
+                        let existingHours = studentLessons.reduce(0.0) { $0 + Double($1.durationMinutes) / 60.0 }
+                        if existingCount > 0 {
+                            Text("该学生已有 \(existingCount) 节课（\(String(format: "%.1f", existingHours))小时），本节将是第 \(existingCount + 1) 节")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 Section("时间") {
@@ -79,11 +107,11 @@ struct LessonFormView: View {
                         .lineLimit(2...4)
                 }
 
-                Section("课次") {
+                DisclosureGroup("更多设置", isExpanded: $showAdvanced) {
                     HStack {
-                        Text("第几节课")
+                        Text("计划节次")
                         Spacer()
-                        TextField("节次", value: $lessonNumber, format: .number)
+                        TextField("可选", value: $lessonNumber, format: .number)
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                             .frame(width: 80)
@@ -91,9 +119,6 @@ struct LessonFormView: View {
                             Text("/ \(total)").foregroundStyle(.secondary)
                         }
                     }
-                }
-
-                DisclosureGroup("更多设置", isExpanded: $showAdvanced) {
                     Toggle("已完成", isOn: $isCompleted)
                     TextField("上课地点（可选）", text: $location)
 
@@ -159,7 +184,7 @@ struct LessonFormView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") { save() }
-                        .disabled(selectedCourse == nil)
+                        .disabled(selectedCourse == nil || (!isEditing && normalizeStudentName(studentName).isEmpty))
                 }
             }
             .onAppear {
@@ -221,7 +246,7 @@ struct LessonFormView: View {
 
         if let lesson {
             lesson.course = selectedCourse
-            lesson.studentName = studentName.trimmingCharacters(in: .whitespaces)
+            lesson.studentName = normalizeStudentName(studentName)
             lesson.date = DateHelper.startOfDay(date)
             lesson.startTime = actualStart
             lesson.endTime = actualEnd
@@ -247,7 +272,7 @@ struct LessonFormView: View {
         } else {
             let newLesson = Lesson(
                 course: selectedCourse,
-                studentName: studentName.trimmingCharacters(in: .whitespaces),
+                studentName: normalizeStudentName(studentName),
                 date: DateHelper.startOfDay(date),
                 startTime: actualStart,
                 endTime: actualEnd,
