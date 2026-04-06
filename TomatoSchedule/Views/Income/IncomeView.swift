@@ -8,11 +8,18 @@ struct IncomeView: View {
 
     @AppStorage("showEstimatedIncome") private var showEstimatedIncome = true
     @State private var period: Period = .month
+    @State private var referenceDate: Date = .now
+    @State private var rankingMode: RankingMode = .byCourse
 
     enum Period: String, CaseIterable {
         case week = "周"
         case month = "月"
         case year = "年"
+    }
+
+    enum RankingMode: String, CaseIterable {
+        case byCourse = "按课程"
+        case byStudent = "按学生"
     }
 
     // MARK: - Computed
@@ -23,14 +30,13 @@ struct IncomeView: View {
 
     private var currentRange: (start: Date, end: Date) {
         let cal = DateHelper.calendar
-        let now = Date.now
         switch period {
         case .week:
-            return DateHelper.weekRange(for: now)
+            return DateHelper.weekRange(for: referenceDate)
         case .month:
-            return DateHelper.monthRange(for: now)
+            return DateHelper.monthRange(for: referenceDate)
         case .year:
-            let start = cal.date(from: cal.dateComponents([.year], from: now))!
+            let start = cal.date(from: cal.dateComponents([.year], from: referenceDate))!
             let end = cal.date(byAdding: .year, value: 1, to: start)!
             return (start, end)
         }
@@ -69,15 +75,17 @@ struct IncomeView: View {
         let label: String
         let courseName: String
         let courseColor: String
+        let studentKey: String
         let income: Double
     }
 
     private var chartData: [ChartEntry] {
         let cal = DateHelper.calendar
-        let range = currentRange
         var entries: [ChartEntry] = []
 
         for lesson in lessonsInRange {
+            let sKey = normalizeStudentName(lesson.studentName)
+            if rankingMode == .byStudent && sKey.isEmpty { continue }
             let label: String
             switch period {
             case .week:
@@ -91,6 +99,7 @@ struct IncomeView: View {
                 label: label,
                 courseName: lesson.course?.name ?? "未知",
                 courseColor: lesson.course?.colorHex ?? "#78909C",
+                studentKey: sKey,
                 income: lesson.effectivePrice
             ))
         }
@@ -124,6 +133,30 @@ struct IncomeView: View {
             .sorted { $0.income > $1.income }
     }
 
+    // Student ranking
+    private struct StudentIncome: Identifiable {
+        let id = UUID()
+        let name: String
+        let count: Int
+        let income: Double
+        let percentage: Double
+    }
+
+    private var studentRanking: [StudentIncome] {
+        var map: [String: (count: Int, income: Double)] = [:]
+        for lesson in lessonsInRange {
+            let key = normalizeStudentName(lesson.studentName)
+            guard !key.isEmpty else { continue }
+            var entry = map[key] ?? (0, 0)
+            entry.count += 1
+            entry.income += lesson.effectivePrice
+            map[key] = entry
+        }
+        let total = max(totalIncome, 1)
+        return map.map { StudentIncome(name: $0.key, count: $0.value.count, income: $0.value.income, percentage: $0.value.income / total * 100) }
+            .sorted { $0.income > $1.income }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -137,6 +170,28 @@ struct IncomeView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .padding(.horizontal)
+
+                    // Period navigation
+                    HStack {
+                        Button { movePeriod(-1) } label: {
+                            Image(systemName: "chevron.left")
+                        }
+                        Spacer()
+                        Text(periodTitle)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Spacer()
+                        Button { movePeriod(1) } label: {
+                            Image(systemName: "chevron.right")
+                        }
+                        if !isCurrentPeriod {
+                            Button("回到当前") {
+                                referenceDate = .now
+                            }
+                            .font(.caption)
+                        }
+                    }
                     .padding(.horizontal)
 
                     // Summary cards
@@ -164,7 +219,10 @@ struct IncomeView: View {
                                 x: .value("时间", entry.label),
                                 y: .value("收入", entry.income)
                             )
-                            .foregroundStyle(by: .value("课程", entry.courseName))
+                            .foregroundStyle(by: .value(
+                                rankingMode == .byCourse ? "课程" : "学生",
+                                rankingMode == .byCourse ? entry.courseName : entry.studentKey
+                            ))
                         }
                         .frame(height: 220)
                         .padding(.horizontal)
@@ -175,37 +233,83 @@ struct IncomeView: View {
                             .frame(height: 220)
                     }
 
-                    // Course ranking
-                    if !courseRanking.isEmpty {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(periodLabel + "课程收入")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .padding(.horizontal)
-                                .padding(.bottom, 8)
+                    // Ranking mode picker
+                    Picker("排行维度", selection: $rankingMode) {
+                        ForEach(RankingMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
 
-                            ForEach(courseRanking) { item in
-                                HStack(spacing: 10) {
-                                    Circle()
-                                        .fill(PresetColors.color(for: item.colorHex))
-                                        .frame(width: 10, height: 10)
-                                    Text(item.name)
-                                        .font(.subheadline)
-                                    Spacer()
-                                    Text("\(item.count)节")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text("¥\(Int(item.income))")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                        .frame(width: 70, alignment: .trailing)
-                                    Text(String(format: "%.0f%%", item.percentage))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .frame(width: 36, alignment: .trailing)
+                    if rankingMode == .byCourse {
+                        // Course ranking
+                        if !courseRanking.isEmpty {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(periodLabel + "课程收入")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .padding(.horizontal)
+                                    .padding(.bottom, 8)
+
+                                ForEach(courseRanking) { item in
+                                    HStack(spacing: 10) {
+                                        Circle()
+                                            .fill(PresetColors.color(for: item.colorHex))
+                                            .frame(width: 10, height: 10)
+                                        Text(item.name)
+                                            .font(.subheadline)
+                                        Spacer()
+                                        Text("\(item.count)节")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text("¥\(Int(item.income))")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .frame(width: 70, alignment: .trailing)
+                                        Text(String(format: "%.0f%%", item.percentage))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 36, alignment: .trailing)
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 6)
                                 }
-                                .padding(.horizontal)
-                                .padding(.vertical, 6)
+                            }
+                        }
+                    } else {
+                        // Student ranking
+                        if !studentRanking.isEmpty {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(periodLabel + "学生收入")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .padding(.horizontal)
+                                    .padding(.bottom, 8)
+
+                                ForEach(studentRanking) { item in
+                                    HStack(spacing: 10) {
+                                        Circle()
+                                            .fill(.secondary)
+                                            .frame(width: 10, height: 10)
+                                        Text(item.name)
+                                            .font(.subheadline)
+                                        Spacer()
+                                        Text("\(item.count)节")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text("¥\(Int(item.income))")
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .frame(width: 70, alignment: .trailing)
+                                        Text(String(format: "%.0f%%", item.percentage))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 36, alignment: .trailing)
+                                    }
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 6)
+                                }
                             }
                         }
                     }
@@ -216,15 +320,57 @@ struct IncomeView: View {
             }
             .navigationTitle("收入")
         }
+        .onChange(of: period) { _, _ in
+            referenceDate = .now
+        }
     }
 
     // MARK: - Helpers
 
-    private var periodLabel: String {
+    private func movePeriod(_ offset: Int) {
+        let cal = DateHelper.calendar
         switch period {
-        case .week: return "本周"
-        case .month: return "本月"
-        case .year: return "本年"
+        case .week:
+            referenceDate = cal.date(byAdding: .weekOfYear, value: offset, to: referenceDate) ?? referenceDate
+        case .month:
+            referenceDate = cal.date(byAdding: .month, value: offset, to: referenceDate) ?? referenceDate
+        case .year:
+            referenceDate = cal.date(byAdding: .year, value: offset, to: referenceDate) ?? referenceDate
+        }
+    }
+
+    private var periodTitle: String {
+        let cal = DateHelper.calendar
+        switch period {
+        case .week:
+            let range = DateHelper.weekRange(for: referenceDate)
+            return "\(DateHelper.dateString(range.start)) - \(DateHelper.dateString(range.end))"
+        case .month:
+            return DateHelper.monthString(referenceDate)
+        case .year:
+            return "\(cal.component(.year, from: referenceDate))年"
+        }
+    }
+
+    private var isCurrentPeriod: Bool {
+        let now = Date.now
+        let range = currentRange
+        return now >= range.start && now < range.end
+    }
+
+    private var periodLabel: String {
+        if isCurrentPeriod {
+            switch period {
+            case .week: return "本周"
+            case .month: return "本月"
+            case .year: return "本年"
+            }
+        }
+        let cal = DateHelper.calendar
+        switch period {
+        case .week: return periodTitle
+        case .month: return "\(cal.component(.month, from: referenceDate))月"
+        case .year: return "\(cal.component(.year, from: referenceDate))年"
         }
     }
 
