@@ -6,6 +6,8 @@ struct MonthlyOverviewView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var displayMonth: Date = .now
     @State private var selectedDay: Date?
+    @State private var showShareSheet = false
+    @State private var shareImage: UIImage?
 
     var onSelectDate: ((Date) -> Void)?
 
@@ -142,6 +144,13 @@ struct MonthlyOverviewView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("关闭") { dismiss() }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        exportImage()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                }
             }
             .sheet(item: Binding(
                 get: { selectedDay.map { IdentifiableDate(date: $0) } },
@@ -159,6 +168,28 @@ struct MonthlyOverviewView: View {
                 )
                 .presentationDetents([.medium, .large])
             }
+            .sheet(isPresented: $showShareSheet) {
+                if let image = shareImage {
+                    ShareSheet(items: [image])
+                }
+            }
+        }
+    }
+
+    // MARK: - Export
+
+    @MainActor
+    private func exportImage() {
+        let content = MonthlyExportCard(
+            month: displayMonth,
+            lessonsByDate: lessonsByDate,
+            timeRange: timeRange
+        )
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 3
+        if let image = renderer.uiImage {
+            shareImage = image
+            showShareSheet = true
         }
     }
 
@@ -201,6 +232,14 @@ struct MonthlyOverviewView: View {
     private struct IdentifiableDate: Identifiable {
         let id = UUID()
         let date: Date
+    }
+
+    private struct ShareSheet: UIViewControllerRepresentable {
+        let items: [Any]
+        func makeUIViewController(context: Context) -> UIActivityViewController {
+            UIActivityViewController(activityItems: items, applicationActivities: nil)
+        }
+        func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
     }
 
     private var legend: some View {
