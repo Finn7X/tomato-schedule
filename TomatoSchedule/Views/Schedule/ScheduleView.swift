@@ -86,6 +86,7 @@ struct ScheduleView: View {
     @State private var showingAddLesson: Bool = false
     @State private var showingBatchLesson: Bool = false
     @State private var editingLesson: Lesson?
+    @State private var showingOverview: Bool = false
     @AppStorage("showIncomeInCourseList") private var showIncome = true
     @AppStorage("showEstimatedIncome") private var showEstimatedIncome = true
 
@@ -185,11 +186,20 @@ struct ScheduleView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("今天") {
-                        selectedDate = .now
-                        displayedMonth = .now
+                    HStack(spacing: 12) {
+                        Button("今天") {
+                            selectedDate = .now
+                            displayedMonth = .now
+                        }
+                        .disabled(DateHelper.isSameDay(selectedDate, .now))
+
+                        Button {
+                            showingOverview = true
+                        } label: {
+                            Image(systemName: "rectangle.grid.1x2")
+                        }
+                        .accessibilityLabel("月度排课总览")
                     }
-                    .disabled(DateHelper.isSameDay(selectedDate, .now))
                 }
             }
             .sheet(isPresented: $showingAddLesson) {
@@ -200,6 +210,12 @@ struct ScheduleView: View {
             }
             .sheet(item: $editingLesson) { lesson in
                 LessonFormView(lesson: lesson, initialDate: lesson.date)
+            }
+            .fullScreenCover(isPresented: $showingOverview) {
+                MonthlyOverviewView { date in
+                    selectedDate = date
+                    displayedMonth = date
+                }
             }
             .onAppear { autoCompletePastLessons() }
         }
