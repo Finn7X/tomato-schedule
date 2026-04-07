@@ -6,8 +6,7 @@ struct MonthlyOverviewView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var displayMonth: Date = .now
     @State private var selectedDay: Date?
-    @State private var showShareSheet = false
-    @State private var shareImage: UIImage?
+    @State private var showStudents: Bool = false
 
     var onSelectDate: ((Date) -> Void)?
 
@@ -57,6 +56,27 @@ struct MonthlyOverviewView: View {
         return bins
     }
 
+    private func studentBins(for date: Date) -> [String] {
+        let totalSlots = timeRange.end - timeRange.start
+        guard totalSlots > 0 else { return [] }
+        var names = Array(repeating: "", count: totalSlots)
+        let lessons = lessonsByDate[DateHelper.startOfDay(date)] ?? []
+        let cal = DateHelper.calendar
+        for lesson in lessons {
+            let startH = cal.component(.hour, from: lesson.startTime)
+            let endH = cal.component(.hour, from: lesson.endTime)
+            let endM = cal.component(.minute, from: lesson.endTime)
+            let startSlot = max(startH - timeRange.start, 0)
+            let endSlot = min(endM > 0 ? endH - timeRange.start + 1 : endH - timeRange.start, totalSlots)
+            for i in startSlot..<endSlot {
+                if names[i].isEmpty {
+                    names[i] = lesson.studentName
+                }
+            }
+        }
+        return names
+    }
+
     private var calendarCells: [(date: Date, isCurrentMonth: Bool)] {
         let days = DateHelper.daysInMonth(for: displayMonth)
         guard let firstDay = days.first else { return [] }
@@ -97,6 +117,18 @@ struct MonthlyOverviewView: View {
         return now >= range.start && now < range.end
     }
 
+    private var weeksCount: Int {
+        calendarCells.count / 7
+    }
+
+    private func cellHeight(in geometry: GeometryProxy) -> CGFloat {
+        let navHeight: CGFloat = 44  // month navigation
+        let weekdayHeight: CGFloat = 24
+        let legendHeight: CGFloat = 32
+        let available = geometry.size.height - navHeight - weekdayHeight - legendHeight
+        return max(available / CGFloat(weeksCount), 70)
+    }
+
     // MARK: - Actions
 
     private func moveMonth(_ offset: Int) {
@@ -109,39 +141,43 @@ struct MonthlyOverviewView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                monthNavigation
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    monthNavigation
+                    weekdayHeaders
 
-                weekdayHeaders
-
-                let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
-                LazyVGrid(columns: columns, spacing: 0) {
-                    ForEach(Array(calendarCells.enumerated()), id: \.offset) { _, cell in
-                        let key = DateHelper.startOfDay(cell.date)
-                        let lessons = lessonsByDate[key] ?? []
-                        DayAvailabilityCell(
-                            date: cell.date,
-                            busyBins: busyBins(for: cell.date),
-                            lessonCount: lessons.count,
-                            isCurrentMonth: cell.isCurrentMonth,
-                            isToday: DateHelper.isSameDay(cell.date, .now),
-                            showStudents: false,
-                            studentBins: [],
-                            cellHeight: 72
-                        )
-                        .onTapGesture {
-                            if cell.isCurrentMonth {
-                                selectedDay = cell.date
+                    let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
+                    LazyVGrid(columns: columns, spacing: 0) {
+                        ForEach(Array(calendarCells.enumerated()), id: \.offset) { _, cell in
+                            let key = DateHelper.startOfDay(cell.date)
+                            let lessons = lessonsByDate[key] ?? []
+                            let height = cellHeight(in: geometry)
+                            DayAvailabilityCell(
+                                date: cell.date,
+                                busyBins: busyBins(for: cell.date),
+                                lessonCount: lessons.count,
+                                isCurrentMonth: cell.isCurrentMonth,
+                                isToday: DateHelper.isSameDay(cell.date, .now),
+                                showStudents: showStudents,
+                                studentBins: studentBins(for: cell.date),
+                                cellHeight: height
+                            )
+                            .overlay(
+                                Rectangle()
+                                    .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                            )
+                            .onTapGesture {
+                                if cell.isCurrentMonth {
+                                    selectedDay = cell.date
+                                }
                             }
                         }
                     }
+
+                    legend
                 }
-
-                legend
-
-                Spacer()
             }
-            .navigationTitle("月度排课总览")
+            .navigationTitle("月度总览")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -149,10 +185,11 @@ struct MonthlyOverviewView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        exportImage()
+                        showStudents.toggle()
                     } label: {
-                        Image(systemName: "square.and.arrow.up")
+                        Image(systemName: showStudents ? "person.fill" : "person")
                     }
+                    .accessibilityLabel(showStudents ? "隐藏学生" : "显示学生")
                 }
             }
             .sheet(item: Binding(
@@ -171,28 +208,6 @@ struct MonthlyOverviewView: View {
                 )
                 .presentationDetents([.medium, .large])
             }
-            .sheet(isPresented: $showShareSheet) {
-                if let image = shareImage {
-                    ShareSheet(items: [image])
-                }
-            }
-        }
-    }
-
-    // MARK: - Export
-
-    @MainActor
-    private func exportImage() {
-        let content = MonthlyExportCard(
-            month: displayMonth,
-            lessonsByDate: lessonsByDate,
-            timeRange: timeRange
-        )
-        let renderer = ImageRenderer(content: content)
-        renderer.scale = 3
-        if let image = renderer.uiImage {
-            shareImage = image
-            showShareSheet = true
         }
     }
 
@@ -202,34 +217,43 @@ struct MonthlyOverviewView: View {
         HStack {
             Button { moveMonth(-1) } label: {
                 Image(systemName: "chevron.left")
+                    .foregroundStyle(.white.opacity(0.8))
             }
             Spacer()
             Text(DateHelper.monthString(displayMonth))
                 .font(.headline)
+                .foregroundStyle(.white)
             Spacer()
             Button { moveMonth(1) } label: {
                 Image(systemName: "chevron.right")
-            }
-            if !isCurrentMonth {
-                Button("回到本月") { displayMonth = .now }
-                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.8))
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(red: 0.34, green: 0.77, blue: 0.72),
+                    Color(red: 0.29, green: 0.68, blue: 0.64)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 
     private var weekdayHeaders: some View {
-        let headers = ["一", "二", "三", "四", "五", "六", "日"]
-        return HStack(spacing: 0) {
-            ForEach(headers, id: \.self) { h in
+        HStack(spacing: 0) {
+            ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { h in
                 Text(h)
-                    .font(.caption2)
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .background(Color(.systemBackground))
     }
 
     private struct IdentifiableDate: Identifiable {
@@ -237,36 +261,25 @@ struct MonthlyOverviewView: View {
         let date: Date
     }
 
-    private struct ShareSheet: UIViewControllerRepresentable {
-        let items: [Any]
-        func makeUIViewController(context: Context) -> UIActivityViewController {
-            UIActivityViewController(activityItems: items, applicationActivities: nil)
-        }
-        func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
-    }
-
     private var legend: some View {
-        VStack(spacing: 2) {
-            HStack(spacing: 16) {
-                HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color(red: 0.34, green: 0.77, blue: 0.72))
-                        .frame(width: 12, height: 12)
-                    Text("已排课")
-                        .font(.caption2)
-                }
-                HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.gray.opacity(0.15))
-                        .frame(width: 12, height: 12)
-                    Text("可约时间")
-                        .font(.caption2)
-                }
+        HStack(spacing: 16) {
+            HStack(spacing: 4) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color(red: 0.34, green: 0.77, blue: 0.72))
+                    .frame(width: 10, height: 10)
+                Text("已排课")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
             }
-            Text("月网格为粗粒度忙闲趋势，精确时间以导出图为准")
-                .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
+            HStack(spacing: 4) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.gray.opacity(0.12))
+                    .frame(width: 10, height: 10)
+                Text("可约")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
         }
-        .padding(.top, 8)
+        .padding(.vertical, 6)
     }
 }
