@@ -7,6 +7,8 @@ struct MonthlyOverviewView: View {
     @State private var displayMonth: Date = .now
     @State private var selectedDay: Date?
     @State private var showStudents: Bool = false
+    @State private var slideForward: Bool = true
+    @State private var isAnimating: Bool = false
 
     var onSelectDate: ((Date) -> Void)?
 
@@ -134,8 +136,11 @@ struct MonthlyOverviewView: View {
     // MARK: - Actions
 
     private func moveMonth(_ offset: Int) {
+        slideForward = offset > 0
         if let newMonth = DateHelper.calendar.date(byAdding: .month, value: offset, to: displayMonth) {
-            displayMonth = newMonth
+            withAnimation(.easeInOut(duration: 0.2)) {
+                displayMonth = newMonth
+            }
         }
     }
 
@@ -175,6 +180,32 @@ struct MonthlyOverviewView: View {
                             }
                         }
                     }
+                    .id(displayMonth)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: slideForward ? .trailing : .leading),
+                        removal: .move(edge: slideForward ? .leading : .trailing)
+                    ))
+                    .clipped()
+                    .gesture(
+                        DragGesture(minimumDistance: 30)
+                            .onEnded { value in
+                                guard !isAnimating else { return }
+                                let h = value.translation.width
+                                let v = value.translation.height
+                                guard abs(h) > 50, abs(h) > abs(v) else { return }
+                                isAnimating = true
+                                if h < 0 {
+                                    slideForward = true
+                                    moveMonth(1)
+                                } else {
+                                    slideForward = false
+                                    moveMonth(-1)
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    isAnimating = false
+                                }
+                            }
+                    )
 
                     legend
                 }
