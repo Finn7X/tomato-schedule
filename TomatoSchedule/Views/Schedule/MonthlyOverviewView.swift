@@ -56,10 +56,11 @@ struct MonthlyOverviewView: View {
         return bins
     }
 
-    private func studentBins(for date: Date) -> [String] {
+    /// Per-bin course colorHex (for showCourseColors mode)
+    private func binColors(for date: Date) -> [String] {
         let totalSlots = timeRange.end - timeRange.start
         guard totalSlots > 0 else { return [] }
-        var names = Array(repeating: "", count: totalSlots)
+        var colors = Array(repeating: "", count: totalSlots)
         let lessons = lessonsByDate[DateHelper.startOfDay(date)] ?? []
         let cal = DateHelper.calendar
         for lesson in lessons {
@@ -68,13 +69,14 @@ struct MonthlyOverviewView: View {
             let endM = cal.component(.minute, from: lesson.endTime)
             let startSlot = max(startH - timeRange.start, 0)
             let endSlot = min(endM > 0 ? endH - timeRange.start + 1 : endH - timeRange.start, totalSlots)
+            let hex = lesson.course?.colorHex ?? "#78909C"
             for i in startSlot..<endSlot {
-                if names[i].isEmpty {
-                    names[i] = lesson.studentName
+                if colors[i].isEmpty {
+                    colors[i] = hex
                 }
             }
         }
-        return names
+        return colors
     }
 
     private var calendarCells: [(date: Date, isCurrentMonth: Bool)] {
@@ -158,8 +160,8 @@ struct MonthlyOverviewView: View {
                                 lessonCount: lessons.count,
                                 isCurrentMonth: cell.isCurrentMonth,
                                 isToday: DateHelper.isSameDay(cell.date, .now),
-                                showStudents: showStudents,
-                                studentBins: studentBins(for: cell.date),
+                                showCourseColors: showStudents,
+                                binColors: binColors(for: cell.date),
                                 cellHeight: height
                             )
                             .overlay(
