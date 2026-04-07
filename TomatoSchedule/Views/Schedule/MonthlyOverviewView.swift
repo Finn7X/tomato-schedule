@@ -143,6 +143,22 @@ struct MonthlyOverviewView: View {
                     Button("关闭") { dismiss() }
                 }
             }
+            .sheet(item: Binding(
+                get: { selectedDay.map { IdentifiableDate(date: $0) } },
+                set: { selectedDay = $0?.date }
+            )) { item in
+                DayScheduleDetailView(
+                    date: item.date,
+                    lessons: lessonsByDate[DateHelper.startOfDay(item.date)] ?? [],
+                    timeRange: timeRange,
+                    onNavigateToSchedule: {
+                        selectedDay = nil
+                        onSelectDate?(item.date)
+                        dismiss()
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
         }
     }
 
@@ -180,6 +196,11 @@ struct MonthlyOverviewView: View {
             }
         }
         .padding(.horizontal, 4)
+    }
+
+    private struct IdentifiableDate: Identifiable {
+        let id = UUID()
+        let date: Date
     }
 
     private var legend: some View {
