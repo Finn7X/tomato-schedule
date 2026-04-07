@@ -29,6 +29,8 @@ struct MonthlyOverviewView: View {
     }
 
     private var timeRange: (start: Int, end: Int) {
+        // 最小范围固定为 8:00-22:00，只在有超出范围的课时才扩展
+        // 确保同样 2 小时的课在不同月份显示高度一致
         let lessons = lessonsInMonth
         guard !lessons.isEmpty else { return (8, 22) }
         let cal = DateHelper.calendar
@@ -38,7 +40,7 @@ struct MonthlyOverviewView: View {
             let m = cal.component(.minute, from: $0.endTime)
             return m > 0 ? h + 1 : h
         }.max() ?? 22
-        return (max(earliest - 1, 0), min(latest + 1, 24))
+        return (min(max(earliest - 1, 0), 8), max(min(latest + 1, 24), 22))
     }
 
     /// Build mini blocks for a day cell (positioned by time fraction)
