@@ -186,17 +186,18 @@ struct ScheduleView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("今天") {
-                        selectedDate = .now
-                        displayedMonth = .now
-                    }
-                    .disabled(DateHelper.isSameDay(selectedDate, .now))
-                }
-                ToolbarItem(placement: .secondaryAction) {
-                    Button {
-                        showingOverview = true
-                    } label: {
-                        Label("月度总览", systemImage: "calendar.day.timeline.left")
+                    HStack(spacing: 12) {
+                        Button("今天") {
+                            selectedDate = .now
+                            displayedMonth = .now
+                        }
+                        .disabled(DateHelper.isSameDay(selectedDate, .now))
+
+                        Button {
+                            showingOverview = true
+                        } label: {
+                            Image(systemName: "calendar.day.timeline.left")
+                        }
                     }
                 }
             }
