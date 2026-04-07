@@ -41,44 +41,35 @@ struct MonthlyOverviewView: View {
         return (max(earliest - 1, 0), min(latest + 1, 24))
     }
 
-    private func busyBins(for date: Date) -> [Bool] {
-        let totalSlots = timeRange.end - timeRange.start
-        guard totalSlots > 0 else { return [] }
-        var bins = Array(repeating: false, count: totalSlots)
+    /// Build mini blocks for a day cell (positioned by time fraction)
+    private func miniBlocks(for date: Date) -> [MiniBlock] {
+        let totalHours = CGFloat(max(timeRange.end - timeRange.start, 1))
         let lessons = lessonsByDate[DateHelper.startOfDay(date)] ?? []
         let cal = DateHelper.calendar
-        for lesson in lessons {
+        return lessons.map { lesson in
             let startH = cal.component(.hour, from: lesson.startTime)
+            let startM = cal.component(.minute, from: lesson.startTime)
             let endH = cal.component(.hour, from: lesson.endTime)
             let endM = cal.component(.minute, from: lesson.endTime)
-            let startSlot = max(startH - timeRange.start, 0)
-            let endSlot = min(endM > 0 ? endH - timeRange.start + 1 : endH - timeRange.start, totalSlots)
-            for i in startSlot..<endSlot { bins[i] = true }
-        }
-        return bins
-    }
+            let startDecimal = CGFloat(startH) + CGFloat(startM) / 60.0
+            let endDecimal = CGFloat(endH) + CGFloat(endM) / 60.0
+            let rangeStart = CGFloat(timeRange.start)
+            let startFrac = max((startDecimal - rangeStart) / totalHours, 0)
+            let heightFrac = min((endDecimal - startDecimal) / totalHours, 1 - startFrac)
 
-    /// Per-bin course colorHex (for showCourseColors mode)
-    private func binColors(for date: Date) -> [String] {
-        let totalSlots = timeRange.end - timeRange.start
-        guard totalSlots > 0 else { return [] }
-        var colors = Array(repeating: "", count: totalSlots)
-        let lessons = lessonsByDate[DateHelper.startOfDay(date)] ?? []
-        let cal = DateHelper.calendar
-        for lesson in lessons {
-            let startH = cal.component(.hour, from: lesson.startTime)
-            let endH = cal.component(.hour, from: lesson.endTime)
-            let endM = cal.component(.minute, from: lesson.endTime)
-            let startSlot = max(startH - timeRange.start, 0)
-            let endSlot = min(endM > 0 ? endH - timeRange.start + 1 : endH - timeRange.start, totalSlots)
-            let hex = lesson.course?.colorHex ?? "#78909C"
-            for i in startSlot..<endSlot {
-                if colors[i].isEmpty {
-                    colors[i] = hex
-                }
-            }
+            // Compact time text: "9-11" or "9:30-11"
+            let startText = startM == 0 ? "\(startH)" : "\(startH):\(String(format: "%02d", startM))"
+            let endText = endM == 0 ? "\(endH)" : "\(endH):\(String(format: "%02d", endM))"
+
+            return MiniBlock(
+                id: lesson.id,
+                startFraction: startFrac,
+                heightFraction: heightFrac,
+                timeText: "\(startText)-\(endText)",
+                studentName: lesson.studentName,
+                courseColorHex: lesson.course?.colorHex ?? "#78909C"
+            )
         }
-        return colors
     }
 
     private var calendarCells: [(date: Date, isCurrentMonth: Bool)] {
@@ -161,12 +152,11 @@ struct MonthlyOverviewView: View {
                             let height = cellHeight(in: geometry)
                             DayAvailabilityCell(
                                 date: cell.date,
-                                busyBins: busyBins(for: cell.date),
+                                blocks: miniBlocks(for: cell.date),
                                 lessonCount: lessons.count,
                                 isCurrentMonth: cell.isCurrentMonth,
                                 isToday: DateHelper.isSameDay(cell.date, .now),
-                                showCourseColors: showStudents,
-                                binColors: binColors(for: cell.date),
+                                showStudents: showStudents,
                                 cellHeight: height
                             )
                             .overlay(

@@ -1,13 +1,48 @@
 import SwiftUI
 
+// MARK: - Mini lesson block for month overview cell
+
+struct MiniBlock: Identifiable {
+    let id: UUID
+    let startFraction: CGFloat   // position in time axis (0-1)
+    let heightFraction: CGFloat  // height in time axis (0-1)
+    let timeText: String         // "9-11" compact format
+    let studentName: String
+    let courseColorHex: String
+}
+
+// MARK: - Student color palette
+
+enum StudentColors {
+    private static let palette: [Color] = [
+        Color(red: 0.90, green: 0.30, blue: 0.30),  // red
+        Color(red: 0.25, green: 0.55, blue: 0.83),  // blue
+        Color(red: 0.30, green: 0.70, blue: 0.40),  // green
+        Color(red: 0.90, green: 0.55, blue: 0.20),  // orange
+        Color(red: 0.60, green: 0.35, blue: 0.75),  // purple
+        Color(red: 0.85, green: 0.40, blue: 0.60),  // pink
+        Color(red: 0.20, green: 0.70, blue: 0.70),  // cyan
+        Color(red: 0.40, green: 0.40, blue: 0.75),  // indigo
+        Color(red: 0.55, green: 0.75, blue: 0.30),  // lime
+        Color(red: 0.75, green: 0.55, blue: 0.35),  // brown
+    ]
+
+    static func color(for name: String) -> Color {
+        guard !name.isEmpty else { return .gray }
+        let index = abs(name.hashValue) % palette.count
+        return palette[index]
+    }
+}
+
+// MARK: - Day cell
+
 struct DayAvailabilityCell: View {
     let date: Date
-    let busyBins: [Bool]           // 14 x 1-hour bins (8:00-22:00)
+    let blocks: [MiniBlock]
     let lessonCount: Int
     let isCurrentMonth: Bool
     let isToday: Bool
-    let showCourseColors: Bool     // show per-course colors vs unified teal
-    let binColors: [String]        // colorHex per bin (only used when showCourseColors)
+    let showStudents: Bool     // false = time text + teal, true = student name + student color
     let cellHeight: CGFloat
 
     private let teal = Color(red: 0.34, green: 0.77, blue: 0.72)
@@ -16,9 +51,8 @@ struct DayAvailabilityCell: View {
         isCurrentMonth && DateHelper.calendar.startOfDay(for: date) < DateHelper.calendar.startOfDay(for: .now)
     }
 
-    // Height for the vertical bar = cell height minus header and padding
     private var barHeight: CGFloat {
-        max(cellHeight - 24, 30)
+        max(cellHeight - 22, 20)
     }
 
     var body: some View {
@@ -35,43 +69,42 @@ struct DayAvailabilityCell: View {
                         .padding(.trailing, 2)
                 }
             }
-            .frame(height: 20)
+            .frame(height: 18)
             .padding(.horizontal, 2)
 
-            // Vertical time bar — centered, 8:00 (top) to 22:00 (bottom)
-            VStack(spacing: 0.5) {
-                ForEach(Array(busyBins.enumerated()), id: \.offset) { index, busy in
-                    let color: Color = {
-                        if !busy { return Color.gray.opacity(0.12) }
-                        if showCourseColors && index < binColors.count && !binColors[index].isEmpty {
-                            return PresetColors.color(for: binColors[index])
-                        }
-                        return teal
-                    }()
-                    Rectangle()
-                        .fill(color)
+            // Lesson blocks area — fills remaining height, 90% width
+            GeometryReader { geo in
+                let w = geo.size.width
+                let h = geo.size.height
+                // Light background strip
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.gray.opacity(0.06))
+                    .frame(width: w * 0.9, height: h)
+                    .position(x: w / 2, y: h / 2)
+
+                ForEach(blocks) { block in
+                    let blockH = max(block.heightFraction * h, 10)
+                    let blockY = block.startFraction * h + blockH / 2
+                    let blockW = w * 0.9
+                    let color = showStudents
+                        ? StudentColors.color(for: block.studentName)
+                        : teal
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color.opacity(0.85))
+                        .frame(width: blockW, height: blockH)
+                        .overlay(
+                            Text(showStudents ? block.studentName : block.timeText)
+                                .font(.system(size: 7))
+                                .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                                .padding(.horizontal, 1)
+                        )
+                        .position(x: w / 2, y: blockY)
                 }
             }
-            .frame(width: 16, height: barHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 3))
-            .overlay(
-                // Reference lines at 12:00 and 18:00
-                GeometryReader { geo in
-                    let h = geo.size.height
-                    let count = CGFloat(max(busyBins.count, 1))
-                    Path { path in
-                        // 12:00 = bin index 4 → y = 4/14 of height
-                        let y12 = h * 4.0 / count
-                        path.move(to: CGPoint(x: 0, y: y12))
-                        path.addLine(to: CGPoint(x: geo.size.width, y: y12))
-                        // 18:00 = bin index 10 → y = 10/14 of height
-                        let y18 = h * 10.0 / count
-                        path.move(to: CGPoint(x: 0, y: y18))
-                        path.addLine(to: CGPoint(x: geo.size.width, y: y18))
-                    }
-                    .stroke(.white.opacity(0.5), lineWidth: 0.5)
-                }
-            )
+            .frame(height: barHeight)
             .padding(.bottom, 2)
         }
         .frame(maxWidth: .infinity)
@@ -95,13 +128,12 @@ struct DayAvailabilityCell: View {
                     .foregroundStyle(.white)
             }
             .padding(.leading, 1)
-            .padding(.top, 1)
         } else {
             Text("\(day)")
                 .font(.system(size: 10))
                 .foregroundStyle(.primary)
                 .padding(.leading, 3)
-                .padding(.top, 2)
+                .padding(.top, 1)
         }
     }
 
