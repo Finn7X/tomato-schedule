@@ -124,7 +124,10 @@ struct MonthlyOverviewView: View {
                             busyBins: busyBins(for: cell.date),
                             lessonCount: lessons.count,
                             isCurrentMonth: cell.isCurrentMonth,
-                            isToday: DateHelper.isSameDay(cell.date, .now)
+                            isToday: DateHelper.isSameDay(cell.date, .now),
+                            showStudents: false,
+                            studentBins: [],
+                            cellHeight: 72
                         )
                         .onTapGesture {
                             if cell.isCurrentMonth {
