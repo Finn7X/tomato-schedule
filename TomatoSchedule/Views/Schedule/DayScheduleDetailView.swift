@@ -95,9 +95,34 @@ struct DayScheduleDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("\(DateHelper.dateString(date)) \(DateHelper.weekdaySymbol(date))")
-                .font(.headline)
-                .padding(.top, 12)
+            // Teal gradient header
+            HStack {
+                Text("\(DateHelper.dateString(date)) \(DateHelper.weekdaySymbol(date))")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Spacer()
+                if let nav = onNavigateToSchedule {
+                    Button {
+                        nav()
+                    } label: {
+                        Label("课表", systemImage: "arrow.right.circle")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.34, green: 0.77, blue: 0.72),
+                        Color(red: 0.29, green: 0.68, blue: 0.64)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
 
             ScrollView {
                 ZStack(alignment: .topLeading) {
@@ -111,12 +136,6 @@ struct DayScheduleDetailView: View {
                 }
                 .frame(height: CGFloat(totalHours) * hourHeight)
                 .padding(.leading, 44)
-            }
-
-            if let nav = onNavigateToSchedule {
-                Button("在课表中查看") { nav() }
-                    .font(.subheadline)
-                    .padding(.vertical, 12)
             }
         }
     }
