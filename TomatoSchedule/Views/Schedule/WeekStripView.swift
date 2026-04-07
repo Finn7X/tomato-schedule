@@ -11,8 +11,6 @@ struct WeekStripView: View {
         }
     }
 
-    private let weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-
     var body: some View {
         HStack(spacing: 0) {
             ForEach(Array(weekDays.enumerated()), id: \.offset) { index, day in
@@ -21,10 +19,6 @@ struct WeekStripView: View {
                 let count = lessonCounts[DateHelper.startOfDay(day)] ?? 0
 
                 VStack(spacing: 4) {
-                    Text(weekdayLabels[index])
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.7))
-
                     ZStack {
                         if isSelected {
                             Circle()
@@ -58,6 +52,7 @@ struct WeekStripView: View {
                 .onTapGesture { selectedDate = day }
             }
         }
+        .padding(.horizontal, 8)
         .padding(.vertical, 4)
     }
 }
