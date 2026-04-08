@@ -22,30 +22,13 @@ struct ManagementView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 4)
 
-                Group {
-                    switch tab {
-                    case .courses:
-                        CourseListContent()
-                    case .students:
-                        StudentListContent()
-                    }
+                TabView(selection: $tab) {
+                    StudentListContent()
+                        .tag(ManagementTab.students)
+                    CourseListContent()
+                        .tag(ManagementTab.courses)
                 }
-                .gesture(
-                    DragGesture(minimumDistance: 40)
-                        .onEnded { value in
-                            let h = value.translation.width
-                            guard abs(h) > 60, abs(h) > abs(value.translation.height) else { return }
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                if h < 0 {
-                                    // swipe left → next tab
-                                    if tab == .students { tab = .courses }
-                                } else {
-                                    // swipe right → prev tab
-                                    if tab == .courses { tab = .students }
-                                }
-                            }
-                        }
-                )
+                .tabViewStyle(.page(indexDisplayMode: .never))
             }
             .navigationTitle("教务")
             .toolbar {
