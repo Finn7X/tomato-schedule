@@ -84,8 +84,9 @@ struct StudentListContent: View {
             }
         }
         .navigationDestination(item: $selectedStudent) { name in
-            // Placeholder until Task 3
-            Text("学生详情: \(name)")
+            StudentDetailView(studentName: name, onRenamed: { newName in
+                selectedStudent = newName
+            })
         }
     }
 
