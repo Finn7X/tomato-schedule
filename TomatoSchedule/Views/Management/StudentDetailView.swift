@@ -60,17 +60,7 @@ struct StudentDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                // Rename button
-                Button {
-                    newName = currentName
-                    showRenameAlert = true
-                } label: {
-                    Label("修改姓名", systemImage: "pencil")
-                        .font(.subheadline)
-                }
-                .padding(.top, 8)
-
+            VStack(spacing: 20) {
                 // Summary cards
                 HStack(spacing: 12) {
                     summaryCard(title: "课时", value: "\(totalLessons)节")
@@ -78,6 +68,7 @@ struct StudentDetailView: View {
                     summaryCard(title: "收入", value: "¥\(Int(totalIncome))")
                 }
                 .padding(.horizontal)
+                .padding(.top, 8)
 
                 // Course distribution
                 if !courseDistribution.isEmpty {
@@ -86,7 +77,7 @@ struct StudentDetailView: View {
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .padding(.horizontal)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 10)
 
                         ForEach(Array(courseDistribution.enumerated()), id: \.offset) { _, item in
                             HStack(spacing: 10) {
@@ -105,7 +96,7 @@ struct StudentDetailView: View {
                                     .frame(width: 70, alignment: .trailing)
                             }
                             .padding(.horizontal)
-                            .padding(.vertical, 6)
+                            .padding(.vertical, 8)
                         }
                     }
                 }
@@ -117,11 +108,11 @@ struct StudentDetailView: View {
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .padding(.horizontal)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 10)
 
                         ForEach(recentLessons) { lesson in
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: 3) {
                                     HStack(spacing: 4) {
                                         Text(DateHelper.dateString(lesson.date))
                                             .font(.subheadline)
@@ -150,7 +141,7 @@ struct StudentDetailView: View {
                                 }
                             }
                             .padding(.horizontal)
-                            .padding(.vertical, 6)
+                            .padding(.vertical, 10)
                             Divider().padding(.leading)
                         }
                     }
@@ -170,6 +161,16 @@ struct StudentDetailView: View {
             }
         }
         .navigationTitle(currentName)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    newName = currentName
+                    showRenameAlert = true
+                } label: {
+                    Image(systemName: "pencil")
+                }
+            }
+        }
         .alert("修改学生姓名", isPresented: $showRenameAlert) {
             TextField("新姓名", text: $newName)
             Button("确认") { performRename() }

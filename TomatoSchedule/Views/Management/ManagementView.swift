@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ManagementView: View {
-    @State private var tab: ManagementTab = .courses
+    @State private var tab: ManagementTab = .students
     @State private var showingAddCourse = false
 
     enum ManagementTab: String, CaseIterable {
@@ -28,7 +28,7 @@ struct ManagementView: View {
                     StudentListContent()
                 }
             }
-            .navigationTitle("管理")
+            .navigationTitle("教务")
             .toolbar {
                 if tab == .courses {
                     ToolbarItem(placement: .primaryAction) {

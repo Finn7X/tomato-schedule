@@ -94,26 +94,35 @@ struct StudentListContent: View {
 
     @ViewBuilder
     private func studentRow(_ student: StudentSummary) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(student.name)
-                .font(.body)
-                .fontWeight(.medium)
-            HStack(spacing: 6) {
-                Text("\(student.lessonCount)节")
-                Text("·")
-                Text(String(format: "%.1f小时", student.totalHours))
-                Text("·")
-                Text("¥\(Int(student.totalIncome))")
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+        HStack(spacing: 12) {
+            // Student color indicator
+            Circle()
+                .fill(StudentColors.color(for: student.name))
+                .frame(width: 12, height: 12)
 
-            if !student.courseNames.isEmpty {
-                Text(student.courseNames.joined(separator: ", "))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(student.name)
+                    .font(.body)
+                    .fontWeight(.medium)
+                HStack(spacing: 6) {
+                    Text("\(student.lessonCount)节")
+                    Text("·")
+                    Text(String(format: "%.1f小时", student.totalHours))
+                    Text("·")
+                    Text("¥\(Int(student.totalIncome))")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                if !student.courseNames.isEmpty {
+                    Text(student.courseNames.joined(separator: ", "))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
             }
+
+            Spacer()
         }
         .padding(.vertical, 4)
     }

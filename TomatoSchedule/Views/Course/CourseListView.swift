@@ -39,6 +39,7 @@ struct CourseListContent: View {
                             }
                     }
                 }
+                .listStyle(.insetGrouped)
             }
         }
         .sheet(item: $editingCourse) { course in

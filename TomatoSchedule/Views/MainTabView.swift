@@ -19,7 +19,7 @@ struct MainTabView: View {
 
             ManagementView()
                 .tabItem {
-                    Label("管理", systemImage: "rectangle.stack")
+                    Label("教务", systemImage: "book")
                 }
                 .tag(2)
 
