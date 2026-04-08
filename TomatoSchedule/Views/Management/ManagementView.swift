@@ -3,6 +3,7 @@ import SwiftUI
 struct ManagementView: View {
     @State private var tab: ManagementTab = .students
     @State private var showingAddCourse = false
+    @State private var selectedStudent: String?
 
     enum ManagementTab: String, CaseIterable {
         case students = "学生"
@@ -23,7 +24,7 @@ struct ManagementView: View {
                 .padding(.bottom, 4)
 
                 TabView(selection: $tab) {
-                    StudentListContent()
+                    StudentListContent(selectedStudent: $selectedStudent)
                         .tag(ManagementTab.students)
                     CourseListContent()
                         .tag(ManagementTab.courses)
@@ -31,6 +32,11 @@ struct ManagementView: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
             .navigationTitle("教务")
+            .navigationDestination(item: $selectedStudent) { name in
+                StudentDetailView(studentName: name, onRenamed: { newName in
+                    selectedStudent = newName
+                })
+            }
             .toolbar {
                 if tab == .courses {
                     ToolbarItem(placement: .primaryAction) {

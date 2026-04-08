@@ -12,6 +12,7 @@ struct CourseFormView: View {
     @State private var colorHex: String = "#FF6B6B"
     @State private var notes: String = ""
     @State private var showAdvanced: Bool = false
+    @State private var showDeleteConfirm: Bool = false
     @State private var subject: String = ""
     @State private var totalHours: Double = 0
     @State private var totalLessons: Int = 0
@@ -72,6 +73,20 @@ struct CourseFormView: View {
                         Text("节").foregroundStyle(.secondary)
                     }
                 }
+
+                if isEditing {
+                    Section {
+                        Button(role: .destructive) {
+                            showDeleteConfirm = true
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Text("删除此课程")
+                                Spacer()
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle(isEditing ? "编辑课程" : "新建课程")
             .navigationBarTitleDisplayMode(.inline)
@@ -114,6 +129,24 @@ struct CourseFormView: View {
                 Button("取消", role: .cancel) {}
             } message: {
                 Text("课时单价从 ¥\(Int(pendingOldRate))/h 更改为 ¥\(Int(pendingRate))/h。\n更新未来自动定价的课程？（手动设定过价格的课不受影响）")
+            }
+            .confirmationDialog("确认删除课程", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                Button("确认删除", role: .destructive) {
+                    if let course {
+                        modelContext.delete(course)
+                        dismiss()
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            } message: {
+                if let course {
+                    let lessonCount = course.lessons.count
+                    if lessonCount > 0 {
+                        Text("「\(course.name)」下有 \(lessonCount) 节课时。删除课程后课时记录和收入将保留，但不再关联此课程。")
+                    } else {
+                        Text("确定要删除「\(course.name)」吗？")
+                    }
+                }
             }
         }
     }

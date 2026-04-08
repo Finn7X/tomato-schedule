@@ -4,7 +4,7 @@ import SwiftData
 struct StudentListContent: View {
     @Query private var allLessons: [Lesson]
     @State private var searchText = ""
-    @State private var selectedStudent: String?  // explicit route state
+    @Binding var selectedStudent: String?
 
     // MARK: - Student aggregation
 
@@ -82,11 +82,6 @@ struct StudentListContent: View {
                 .listStyle(.plain)
                 .searchable(text: $searchText, prompt: "搜索学生")
             }
-        }
-        .navigationDestination(item: $selectedStudent) { name in
-            StudentDetailView(studentName: name, onRenamed: { newName in
-                selectedStudent = newName
-            })
         }
     }
 

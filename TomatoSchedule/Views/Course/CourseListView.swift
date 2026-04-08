@@ -7,7 +7,6 @@ struct CourseListContent: View {
 
     @AppStorage("showIncomeInCourseList") private var showIncome = true
     @State private var editingCourse: Course?
-    @State private var courseToDelete: Course?
     @State private var searchText = ""
 
     private var filteredCourses: [Course] {
@@ -36,13 +35,6 @@ struct CourseListContent: View {
                         }
                         .contentShape(Rectangle())
                         .onTapGesture { editingCourse = course }
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                courseToDelete = course
-                            } label: {
-                                Label("删除", systemImage: "trash")
-                            }
-                        }
                     }
                 }
                 .listStyle(.plain)
@@ -51,31 +43,6 @@ struct CourseListContent: View {
         }
         .sheet(item: $editingCourse) { course in
             CourseFormView(course: course)
-        }
-        .confirmationDialog(
-            "确认删除课程",
-            isPresented: Binding(
-                get: { courseToDelete != nil },
-                set: { if !$0 { courseToDelete = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("确认删除", role: .destructive) {
-                if let course = courseToDelete {
-                    modelContext.delete(course)
-                    courseToDelete = nil
-                }
-            }
-            Button("取消", role: .cancel) { courseToDelete = nil }
-        } message: {
-            if let course = courseToDelete {
-                let lessonCount = course.lessons.count
-                if lessonCount > 0 {
-                    Text("「\(course.name)」下有 \(lessonCount) 节课时。删除课程后课时记录和收入将保留，但不再关联此课程。")
-                } else {
-                    Text("确定要删除「\(course.name)」吗？")
-                }
-            }
         }
     }
 
