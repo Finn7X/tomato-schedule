@@ -17,9 +17,9 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            CourseListView()
+            ManagementView()
                 .tabItem {
-                    Label("课程", systemImage: "book")
+                    Label("管理", systemImage: "rectangle.stack")
                 }
                 .tag(2)
 
