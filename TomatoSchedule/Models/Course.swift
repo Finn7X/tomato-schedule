@@ -9,7 +9,7 @@ final class Course {
     var notes: String
     var createdAt: Date
 
-    @Relationship(deleteRule: .cascade, inverse: \Lesson.course)
+    @Relationship(deleteRule: .nullify, inverse: \Lesson.course)
     var lessons: [Lesson]
 
     // V2 新增

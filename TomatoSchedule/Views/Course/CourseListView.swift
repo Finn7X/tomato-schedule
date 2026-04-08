@@ -36,13 +36,13 @@ struct CourseListContent: View {
                         }
                         .contentShape(Rectangle())
                         .onTapGesture { editingCourse = course }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    courseToDelete = course
-                                } label: {
-                                    Label("删除", systemImage: "trash")
-                                }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                courseToDelete = course
+                            } label: {
+                                Label("删除", systemImage: "trash")
                             }
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -62,7 +62,6 @@ struct CourseListContent: View {
         ) {
             Button("确认删除", role: .destructive) {
                 if let course = courseToDelete {
-                    try? CalendarSyncService.shared.removeEventsForLessons(Array(course.lessons))
                     modelContext.delete(course)
                     courseToDelete = nil
                 }
@@ -70,12 +69,9 @@ struct CourseListContent: View {
             Button("取消", role: .cancel) { courseToDelete = nil }
         } message: {
             if let course = courseToDelete {
-                let completed = course.completedLessons.count
-                let income = course.totalIncome
-                if completed > 0 && income > 0 {
-                    Text("「\(course.name)」下有 \(completed) 节已完成课时，总收入 ¥\(Int(income))。删除后相关收入记录将一并移除且不可恢复。")
-                } else if completed > 0 {
-                    Text("「\(course.name)」下有 \(completed) 节已完成课时。删除后不可恢复。")
+                let lessonCount = course.lessons.count
+                if lessonCount > 0 {
+                    Text("「\(course.name)」下有 \(lessonCount) 节课时。删除课程后课时记录和收入将保留，但不再关联此课程。")
                 } else {
                     Text("确定要删除「\(course.name)」吗？")
                 }
