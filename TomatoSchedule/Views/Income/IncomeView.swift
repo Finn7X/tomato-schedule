@@ -9,7 +9,7 @@ struct IncomeView: View {
     @AppStorage("showEstimatedIncome") private var showEstimatedIncome = true
     @State private var period: Period = .month
     @State private var referenceDate: Date = .now
-    @State private var rankingMode: RankingMode = .byCourse
+    @State private var rankingMode: RankingMode = .byStudent
 
     enum Period: String, CaseIterable {
         case week = "周"
@@ -73,6 +73,7 @@ struct IncomeView: View {
     private struct ChartEntry: Identifiable {
         let id = UUID()
         let label: String
+        let sortOrder: Int       // for correct x-axis ordering
         let courseName: String
         let courseColor: String
         let studentKey: String
@@ -87,23 +88,33 @@ struct IncomeView: View {
             let sKey = normalizeStudentName(lesson.studentName)
             if rankingMode == .byStudent && sKey.isEmpty { continue }
             let label: String
+            let order: Int
             switch period {
             case .week:
                 label = DateHelper.weekdaySymbol(lesson.date)
+                // Monday=2..Sunday=1 → remap to 0..6 for sorting
+                let wd = cal.component(.weekday, from: lesson.date)
+                order = (wd + 5) % 7  // Mon=0, Tue=1, ..., Sun=6
             case .month:
-                label = "\(cal.component(.day, from: lesson.date))日"
+                let day = cal.component(.day, from: lesson.date)
+                label = "\(day)日"
+                order = day
             case .year:
-                label = "\(cal.component(.month, from: lesson.date))月"
+                let month = cal.component(.month, from: lesson.date)
+                label = "\(month)月"
+                order = month
             }
             entries.append(ChartEntry(
                 label: label,
+                sortOrder: order,
                 courseName: lesson.course?.name ?? "未知",
                 courseColor: lesson.course?.colorHex ?? "#78909C",
                 studentKey: sKey,
                 income: lesson.effectivePrice
             ))
         }
-        return entries
+        // Sort by sortOrder so Chart x-axis renders in chronological order
+        return entries.sorted { $0.sortOrder < $1.sortOrder }
     }
 
     // Course ranking
