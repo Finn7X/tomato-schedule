@@ -5,8 +5,8 @@ struct ManagementView: View {
     @State private var showingAddCourse = false
 
     enum ManagementTab: String, CaseIterable {
-        case courses = "课程"
         case students = "学生"
+        case courses = "课程"
     }
 
     var body: some View {
@@ -20,13 +20,32 @@ struct ManagementView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.top, 8)
+                .padding(.bottom, 4)
 
-                switch tab {
-                case .courses:
-                    CourseListContent()
-                case .students:
-                    StudentListContent()
+                Group {
+                    switch tab {
+                    case .courses:
+                        CourseListContent()
+                    case .students:
+                        StudentListContent()
+                    }
                 }
+                .gesture(
+                    DragGesture(minimumDistance: 40)
+                        .onEnded { value in
+                            let h = value.translation.width
+                            guard abs(h) > 60, abs(h) > abs(value.translation.height) else { return }
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                if h < 0 {
+                                    // swipe left → next tab
+                                    if tab == .students { tab = .courses }
+                                } else {
+                                    // swipe right → prev tab
+                                    if tab == .courses { tab = .students }
+                                }
+                            }
+                        }
+                )
             }
             .navigationTitle("教务")
             .toolbar {

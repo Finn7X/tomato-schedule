@@ -8,6 +8,12 @@ struct CourseListContent: View {
     @AppStorage("showIncomeInCourseList") private var showIncome = true
     @State private var editingCourse: Course?
     @State private var courseToDelete: Course?
+    @State private var searchText = ""
+
+    private var filteredCourses: [Course] {
+        if searchText.isEmpty { return courses }
+        return courses.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
 
     var body: some View {
         Group {
@@ -19,7 +25,7 @@ struct CourseListContent: View {
                 )
             } else {
                 List {
-                    ForEach(courses) { course in
+                    ForEach(filteredCourses) { course in
                         HStack {
                             courseRow(course)
                             if showIncome && course.totalIncome > 0 {
@@ -39,7 +45,8 @@ struct CourseListContent: View {
                             }
                     }
                 }
-                .listStyle(.insetGrouped)
+                .listStyle(.plain)
+                .searchable(text: $searchText, prompt: "搜索课程")
             }
         }
         .sheet(item: $editingCourse) { course in
@@ -104,11 +111,9 @@ struct CourseListContent: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("\(course.lessons.count) 节课")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("\(course.lessons.count) 节课")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
     }
