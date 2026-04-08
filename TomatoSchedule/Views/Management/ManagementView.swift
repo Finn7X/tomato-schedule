@@ -25,10 +25,7 @@ struct ManagementView: View {
                 case .courses:
                     CourseListContent()
                 case .students:
-                    // Placeholder until Task 2
-                    Text("学生列表开发中")
-                        .foregroundStyle(.secondary)
-                        .frame(maxHeight: .infinity)
+                    StudentListContent()
                 }
             }
             .navigationTitle("管理")
