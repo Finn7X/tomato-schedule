@@ -38,23 +38,36 @@
 ```
 MonthlyOverviewView (容器)
 │  @Query allLessons
-│  @State displayedMonth, selectedWeekStart, selectedLesson
+│  @State displayMonth, selectedWeekStart (仅跨方向 state)
 │  @Environment verticalSizeClass
+│  AppOrientationLock.shared (onAppear 解锁 / onDisappear 锁回)
 │
 ├── compact == false (竖屏)
-│   └── MonthCalendarView     ← 从现有代码抽离
+│   └── MonthCalendarView           ← 从现有代码抽离
+│        ├─ 内部 state: selectedDay, showStudents, slideForward, isAnimating
+│        └─ DayScheduleDetailView (sheet)
 │
 └── compact == true (横屏)
-    └── WeekTimelineView       ← 新增
+    └── WeekTimelineView             ← 新增
+         ├─ WeekHeaderRow
+         ├─ WeekContentView × N (TabView 分页)
+         │   ├─ TimeAxisColumn (私有子视图)
+         │   ├─ LessonBlockView × M
+         │   └─ NowIndicatorView
+         └─ LessonInfoPopover (被 LessonBlockView 挂载)
 ```
 
 **抽取与职责划分：**
 
-- `MonthlyOverviewView`：状态容器，不含视觉元素；处理方向锁解除/恢复、方向切换时的状态桥接
-- `MonthCalendarView`：竖屏月网格（原 `MonthlyOverviewView` 的月视图逻辑整体搬迁）
-- `WeekTimelineView`：横屏周视图容器（TabView pager + 顶栏 + 缓存）
-- `WeekContentView`：单周页面渲染
-- `LessonLaneLayout`（helper）：车道分配公共算法，周视图与 `DayScheduleDetailView` 共用
+- `MonthlyOverviewView`：状态容器，不含视觉元素；处理方向锁解除/恢复、跨方向 state 桥接（`selectedWeekStart` 的懒初始化）
+- `MonthCalendarView`：竖屏月网格（原 `MonthlyOverviewView` 月视图逻辑整体搬迁，**自己持有**选中日、显示学生 toggle、动画方向等 state 与 `DayScheduleDetailView` sheet）
+- `WeekTimelineView`：横屏周视图容器（TabView pager + 顶栏 + 快照缓存）
+- `WeekContentView`：单周页面渲染（含时间轴列私有子视图）
+- `WeekHeaderRow`：7 列星期+日期表头
+- `LessonBlockView`：单个课时块 + tap → popover 绑定
+- `NowIndicatorView`：红色现在时刻指示线 + Timer
+- `AppOrientationLock`（helper）：`ObservableObject` 单例，`AppDelegate` 据此动态决定支持方向
+- `LessonLaneLayout`（helper）：车道分配公共算法，周视图与 `DayScheduleDetailView` 共用（见 §7.4 对现有行为的保留）
 - `WeekSnapshot`（helper）：一周的数据聚合结构
 
 该方案与近期 Phase 1-4 重构"抽子视图 + 提 helpers"的方向一致。
@@ -65,8 +78,8 @@ MonthlyOverviewView (容器)
 
 ### 3.1 全局解锁 + 页面级锁定
 
-1. **`project.yml`**：将 `UISupportedInterfaceOrientations_iPhone` 改为 `[Portrait, LandscapeLeft, LandscapeRight]`
-2. **`TomatoScheduleApp.swift`**：注入 `UIApplicationDelegateAdaptor(AppDelegate.self)`
+1. **`project.yml`**：将 `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone` 的值从 `"UIInterfaceOrientationPortrait"` 改为包含 `UIInterfaceOrientationPortrait`、`UIInterfaceOrientationLandscapeLeft`、`UIInterfaceOrientationLandscapeRight` 的数组值（xcodegen 支持 YAML 数组形式；具体值格式在 plan 阶段确认）
+2. **`TomatoScheduleApp.swift`**：注入 `@UIApplicationDelegateAdaptor(AppDelegate.self)`
 3. **`AppOrientationLock`（新）**：`ObservableObject` 单例，持有 `allowed: UIInterfaceOrientationMask`，默认 `.portrait`
 4. **`AppDelegate`**：`application(_:supportedInterfaceOrientationsFor:)` 返回 `AppOrientationLock.shared.allowed`
 
@@ -76,6 +89,7 @@ MonthlyOverviewView (容器)
 - `onDisappear`：
   - `AppOrientationLock.shared.allowed = .portrait`
   - `UIApplication.shared.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))` 强制锁回
+- **边界**：若用户在横屏状态下下拉关闭（`fullScreenCover` 原生不支持下拉，但预留兜底）：`onDisappear` 的锁回会触发系统旋转动画，此时 ScheduleView 已被遮挡，视觉上无异感；不做额外处理
 
 ### 3.3 内部方向感知
 
@@ -125,7 +139,8 @@ MonthlyOverviewView (容器)
 ### 4.4 时间轴列（sticky 左 48pt）
 
 - 整点标签右对齐，13pt caption，`.secondary`
-- 每小时高 **80pt**；默认 9–21 共 12h = 960pt
+- 每小时高 **80pt**；默认 9–21 共 12h = 960pt 内容高度
+- 扩展后最大可能范围（6–23）= 17h = 1360pt 内容高度；`ScrollView` 自然承载，不需特殊处理
 - 半点细虚线分隔（可选，增强时间感知）
 
 ### 4.5 内容网格（横向翻页 + 纵向滚动）
@@ -143,7 +158,8 @@ MonthlyOverviewView (容器)
   - 上行：学生姓名（11pt, semibold）
   - 下行：`09:30–10:30`（10pt, regular, `.secondary`）
 - 块高 < 28pt（约 ≤25 分钟课时）：单行仅显示学生姓名，缩 10pt 字号
-- 重叠：车道平分宽度，最多 3 列并排，第 4 条以后以 "+N 更多" 角标合并（右下角 10pt 气泡）
+- **重叠宽度规则**：车道数 = 该课时所属"冲突簇"内的最大并发车道数（laneCount）；该簇内**每个**块宽度均 = 列宽 / laneCount（统一除，不按各自并发数变化），避免边界对不齐
+- 最多 3 列并排；簇内同时并发 >3 时：lane 0/1/2 正常渲染，第 4 条起不单独渲染，改为在第 3 条块右下角叠加 "+N" 10pt 圆角气泡（点击第 3 条块弹出 popover 时顺带显示被合并的条目列表）
 
 ### 4.7 现在时刻指示线
 
@@ -154,13 +170,16 @@ MonthlyOverviewView (容器)
 
 ---
 
-## 5. 竖屏月视图（不变）
+## 5. 竖屏月视图（行为不变，职责拆分）
 
-竖屏延续当前 `MonthlyOverviewView` 行为，改动仅为**文件搬迁**：
+竖屏延续当前 `MonthlyOverviewView` 的视觉与行为，改动为**文件搬迁 + state 下放**：
 
 - 月网格 + snapshot + MiniBlock + 拖拽切月逻辑整体迁到 `MonthCalendarView.swift`
-- 视觉与行为 0 变更
-- `@Query allLessons` 上移至容器
+- 视觉 0 变更
+- **State 下放到 `MonthCalendarView`**：`selectedDay`、`showStudents`、`slideForward`、`isAnimating` 本来就是纯竖屏月视图状态，跟随子视图下放
+- **`DayScheduleDetailView` sheet 绑定也下放**到 `MonthCalendarView`：竖屏点日期弹出的底部 sheet 由 `MonthCalendarView` 持有与触发，容器不感知
+- **容器只保留跨方向 state**：`displayMonth`（周视图默认定位用）、`selectedWeekStart`（横屏分页）
+- `@Query allLessons` 上移至容器，`MonthCalendarView` 通过参数接收
 - "显示学生" toggle 仍在竖屏月视图右上（不影响横屏）
 
 ---
@@ -217,23 +236,30 @@ MonthlyOverviewView (容器)
 
 ### 7.1 容器状态
 
+签名与现有代码对齐（`displayMonth` 保留原命名、`onSelectDate` 仍为可选回调）：
+
 ```swift
 struct MonthlyOverviewView: View {
     @Query private var allLessons: [Lesson]
-    @State private var displayedMonth: Date
-    @State private var selectedWeekStart: Date?   // 懒初始化
-    @State private var selectedLesson: Lesson?
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.verticalSizeClass) private var vSize
-    let onSelectDate: (Date) -> Void
+
+    // 跨方向 state（容器持有）
+    @State private var displayMonth: Date = .now
+    @State private var selectedWeekStart: Date? = nil    // 懒初始化
+
+    var onSelectDate: ((Date) -> Void)? = nil
 }
 ```
 
+**竖屏专属 state**（`selectedDay`、`showStudents`、`slideForward`、`isAnimating`）下放至 `MonthCalendarView`（见 §5）。横屏的 popover state（`selectedLesson`）下放至 `LessonBlockView` / `WeekContentView` 内部（每页独立管理，避免跨页污染）。
+
 ### 7.2 方向切换的 state 约定
 
-- **竖 → 横**：若 `selectedWeekStart == nil` 或不属于 `displayedMonth`，重新推导：
-  - `displayedMonth` 包含今天 → 本周周一
-  - 否则 → `displayedMonth` 第一周的周一
-- **横 → 竖**：`displayedMonth` 保持不变
+- **竖 → 横**：若 `selectedWeekStart == nil` 或不属于 `displayMonth`，重新推导：
+  - `displayMonth` 包含今天 → 本周周一
+  - 否则 → `displayMonth` 第一周的周一
+- **横 → 竖**：`displayMonth` 保持不变
 - **退出**：容器销毁自动清理
 
 ### 7.3 核心数据结构
@@ -263,18 +289,26 @@ struct PlacedBlock: Identifiable {
 }
 ```
 
-### 7.4 车道分配 helper
+### 7.4 车道分配 helper（保留现有 DayScheduleDetailView 行为）
+
+`DayScheduleDetailView` 现有实现**硬编码 2 车道上限**（`laneEndTimes.count < 2`），超出时 lane = -1 且在 body 层过滤不渲染。为避免重构引入语义变更，新 helper 通过参数化 `maxLanes` **保留日视图现有行为**，同时支持周视图更宽的 3 车道：
 
 ```swift
 // Helpers/LessonLaneLayout.swift
 enum LessonLaneLayout {
     /// 经典扫描线算法：按 startTime 排序，贪心分配到最早空闲车道
-    /// 返回 (lesson, lane, laneCount)，laneCount 是课时所在"冲突簇"的最大并发数
-    static func assignLanes(_ lessons: [Lesson]) -> [(Lesson, lane: Int, laneCount: Int)]
+    /// - Parameter maxLanes: 车道上限；超出时 lane = -1（由调用方决定是否渲染或合并）
+    /// - Returns: (lesson, lane, laneCount)；laneCount = 该课时所在"冲突簇"的最大并发车道数（不含溢出项）
+    static func assignLanes(
+        _ lessons: [Lesson],
+        maxLanes: Int
+    ) -> [(lesson: Lesson, lane: Int, laneCount: Int)]
 }
 ```
 
-从 `DayScheduleDetailView` 内联车道逻辑提取，同时重构 `DayScheduleDetailView` 使用该 helper，单元测试覆盖。
+- **`DayScheduleDetailView`** 调用 `assignLanes(lessons, maxLanes: 2)`，保留 lane = -1 的过滤逻辑，**视觉 0 变更**
+- **`WeekContentView`** 调用 `assignLanes(lessons, maxLanes: 3)`，lane = -1 时按 §4.6 在第 3 条块右下角合并 "+N" 气泡
+- 单元测试覆盖两种 `maxLanes` 值
 
 ### 7.5 快照缓存
 
@@ -287,7 +321,7 @@ enum LessonLaneLayout {
 ```
 @Query allLessons ─→ MonthlyOverviewView (container)
                         │
-                        ├─ displayedMonth ────→ MonthCalendarView (竖屏)
+                        ├─ displayMonth ────→ MonthCalendarView (竖屏)
                         │
                         └─ selectedWeekStart ─→ WeekTimelineView (横屏)
                                                    │ TabView pager
@@ -318,8 +352,10 @@ enum LessonLaneLayout {
 
 | 情形 | 处理 |
 |---|---|
-| 两节课完全同时 | lane 0 / lane 1，各 1/2 宽度 |
-| 3+ 节同时重叠 | 车道最多 3 列；第 4 条起以 "+N 更多" 角标合并 |
+| 两节课完全同时 | lane 0 / lane 1，laneCount=2，簇内每块均占 1/2 列宽 |
+| 3 节同时重叠 | lane 0/1/2，laneCount=3，每块占 1/3 列宽 |
+| 4+ 节同时重叠（周视图 maxLanes=3） | lane 0/1/2 正常渲染；lane=-1 的项不单独绘制，在 lane=2 的块右下角叠加 "+N" 气泡，popover 内列出被合并项 |
+| 4+ 节同时重叠（日视图 maxLanes=2） | 保留现有行为：lane 0/1 正常渲染，lane=-1 项过滤不显示 |
 | 课时 < 15 分钟 | 最小块高 18pt，单行显示学生名，字号 10pt |
 | 课时 > 8h（异常） | 正常渲染，时间轴自动扩展 |
 | 跨天课时（endTime 跨日期） | 只在 startTime 当日渲染，截断至 23:59，右下箭头 ⤓ 提示 |
@@ -427,7 +463,7 @@ TomatoSchedule/
 ### 10.2 手工验收清单
 
 - [ ] 竖屏 → 横屏：定位到当月今天所在周（若今天不在该月则定位第一周）
-- [ ] 横屏 → 竖屏：`displayedMonth` 保持
+- [ ] 横屏 → 竖屏：`displayMonth` 保持
 - [ ] 无课周横滑无 crash
 - [ ] 重叠 2-3 节课车道分配正确
 - [ ] 越界课时（8:00 / 22:00）触发时间轴扩展
