@@ -10,7 +10,9 @@
 
 **Branch:** `refactor/lightweight-cleanup`
 
-**Build verify:** `cd /Users/xujifeng/dev/TomatoSchedule && xcodegen generate && xcodebuild -project TomatoSchedule.xcodeproj -scheme TomatoSchedule -destination 'platform=iOS Simulator,name=iPhone 16' build`
+**Build verify:** `cd /Users/xujifeng/dev/TomatoSchedule && xcodegen generate && xcodebuild -project TomatoSchedule.xcodeproj -scheme TomatoSchedule -destination 'generic/platform=iOS Simulator' build`
+
+**Baseline:** 2026-04-15 在 commit `a26a781` 上本地执行 `xcodegen generate && xcodebuild ... build` 成功（BUILD SUCCEEDED）。每个 Phase 结束后都应执行同样命令验证。
 
 ---
 
