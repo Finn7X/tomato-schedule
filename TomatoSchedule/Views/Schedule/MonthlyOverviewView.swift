@@ -12,118 +12,113 @@ struct MonthlyOverviewView: View {
 
     var onSelectDate: ((Date) -> Void)?
 
-    // MARK: - Computed Properties
+    // MARK: - Precomputed snapshot
 
-    private var lessonsInMonth: [Lesson] {
+    fileprivate struct MonthSnapshot {
+        let cells: [(date: Date, isCurrentMonth: Bool)]
+        let lessonsByDate: [Date: [Lesson]]
+        let timeRange: (start: Int, end: Int)
+        let blocksByDate: [Date: [MiniBlock]]
+        let weeks: Int
+    }
+
+    /// Build everything for the current `displayMonth` in one pass.
+    /// This is called once per `body` render, replacing ~42×N-scale computed-property thrash.
+    private func buildSnapshot() -> MonthSnapshot {
+        let cal = DateHelper.calendar
         let range = DateHelper.monthRange(for: displayMonth)
-        return allLessons.filter { $0.date >= range.start && $0.date < range.end }
-    }
+        let monthLessons = allLessons.filter { $0.date >= range.start && $0.date < range.end }
 
-    private var lessonsByDate: [Date: [Lesson]] {
-        var map: [Date: [Lesson]] = [:]
-        for lesson in lessonsInMonth {
-            let key = DateHelper.startOfDay(lesson.date)
-            map[key, default: []].append(lesson)
+        // Group by start-of-day
+        var grouped: [Date: [Lesson]] = [:]
+        grouped.reserveCapacity(monthLessons.count)
+        for lesson in monthLessons {
+            let key = cal.startOfDay(for: lesson.date)
+            grouped[key, default: []].append(lesson)
         }
-        return map
-    }
 
-    private var timeRange: (start: Int, end: Int) {
-        // 最小范围固定为 8:00-22:00，只在有超出范围的课时才扩展
-        // 确保同样 2 小时的课在不同月份显示高度一致
-        let lessons = lessonsInMonth
-        guard !lessons.isEmpty else { return (8, 22) }
-        let cal = DateHelper.calendar
-        let earliest = lessons.map { cal.component(.hour, from: $0.startTime) }.min() ?? 8
-        let latest = lessons.map {
-            let h = cal.component(.hour, from: $0.endTime)
-            let m = cal.component(.minute, from: $0.endTime)
-            return m > 0 ? h + 1 : h
-        }.max() ?? 22
-        return (min(max(earliest - 1, 0), 8), max(min(latest + 1, 24), 22))
-    }
-
-    /// Build mini blocks for a day cell (positioned by time fraction)
-    private func miniBlocks(for date: Date) -> [MiniBlock] {
-        let totalHours = CGFloat(max(timeRange.end - timeRange.start, 1))
-        let lessons = lessonsByDate[DateHelper.startOfDay(date)] ?? []
-        let cal = DateHelper.calendar
-        return lessons.map { lesson in
-            let startH = cal.component(.hour, from: lesson.startTime)
-            let startM = cal.component(.minute, from: lesson.startTime)
-            let endH = cal.component(.hour, from: lesson.endTime)
-            let endM = cal.component(.minute, from: lesson.endTime)
-            let startDecimal = CGFloat(startH) + CGFloat(startM) / 60.0
-            let endDecimal = CGFloat(endH) + CGFloat(endM) / 60.0
-            let rangeStart = CGFloat(timeRange.start)
-            let startFrac = max((startDecimal - rangeStart) / totalHours, 0)
-            let heightFrac = min((endDecimal - startDecimal) / totalHours, 1 - startFrac)
-
-            // Compact time text: "9-11" or "9:30-11"
-            let startText = startM == 0 ? "\(startH)" : "\(startH):\(String(format: "%02d", startM))"
-            let endText = endM == 0 ? "\(endH)" : "\(endH):\(String(format: "%02d", endM))"
-
-            return MiniBlock(
-                id: lesson.id,
-                startFraction: startFrac,
-                heightFraction: heightFrac,
-                timeText: "\(startText)-\(endText)",
-                studentName: lesson.studentName,
-                courseColorHex: lesson.course?.colorHex ?? "#78909C"
-            )
-        }
-    }
-
-    private var calendarCells: [(date: Date, isCurrentMonth: Bool)] {
-        let days = DateHelper.daysInMonth(for: displayMonth)
-        guard let firstDay = days.first else { return [] }
-
-        let weekday = DateHelper.calendar.component(.weekday, from: firstDay)
-        let leadingOffset = (weekday + 5) % 7
-
-        var result: [(Date, Bool)] = []
-
-        // Leading days from previous month
-        for i in (0..<leadingOffset).reversed() {
-            if let prev = DateHelper.calendar.date(byAdding: .day, value: -(i + 1), to: firstDay) {
-                result.append((prev, false))
+        // Time range (min 8:00-22:00, expand if needed)
+        var tr: (start: Int, end: Int) = (8, 22)
+        if !monthLessons.isEmpty {
+            var earliest = 8
+            var latest = 22
+            for lesson in monthLessons {
+                let s = cal.component(.hour, from: lesson.startTime)
+                if s < earliest { earliest = s }
+                let eComp = cal.dateComponents([.hour, .minute], from: lesson.endTime)
+                let e = (eComp.minute ?? 0) > 0 ? (eComp.hour ?? 0) + 1 : (eComp.hour ?? 0)
+                if e > latest { latest = e }
             }
+            tr = (min(max(earliest - 1, 0), 8), max(min(latest + 1, 24), 22))
         }
 
-        // Current month days
-        for day in days {
-            result.append((day, true))
-        }
-
-        // Trailing days to fill last row
-        let remainder = result.count % 7
-        if remainder > 0, let lastDay = days.last {
-            for i in 1...(7 - remainder) {
-                if let next = DateHelper.calendar.date(byAdding: .day, value: i, to: lastDay) {
-                    result.append((next, false))
+        // Calendar cells (leading/current/trailing)
+        let days = DateHelper.daysInMonth(for: displayMonth)
+        var cells: [(Date, Bool)] = []
+        if let firstDay = days.first {
+            let weekday = cal.component(.weekday, from: firstDay)
+            let leadingOffset = (weekday + 5) % 7
+            for i in (0..<leadingOffset).reversed() {
+                if let prev = cal.date(byAdding: .day, value: -(i + 1), to: firstDay) {
+                    cells.append((prev, false))
+                }
+            }
+            for day in days { cells.append((day, true)) }
+            let remainder = cells.count % 7
+            if remainder > 0, let lastDay = days.last {
+                for i in 1...(7 - remainder) {
+                    if let next = cal.date(byAdding: .day, value: i, to: lastDay) {
+                        cells.append((next, false))
+                    }
                 }
             }
         }
 
-        return result
+        // Precompute mini blocks per day (only for days with lessons)
+        let totalHours = CGFloat(max(tr.end - tr.start, 1))
+        let rangeStart = CGFloat(tr.start)
+        var blocks: [Date: [MiniBlock]] = [:]
+        blocks.reserveCapacity(grouped.count)
+        for (key, lessons) in grouped {
+            blocks[key] = lessons.map { lesson in
+                let sComp = cal.dateComponents([.hour, .minute], from: lesson.startTime)
+                let eComp = cal.dateComponents([.hour, .minute], from: lesson.endTime)
+                let startH = sComp.hour ?? 0
+                let startM = sComp.minute ?? 0
+                let endH = eComp.hour ?? 0
+                let endM = eComp.minute ?? 0
+                let startDecimal = CGFloat(startH) + CGFloat(startM) / 60.0
+                let endDecimal = CGFloat(endH) + CGFloat(endM) / 60.0
+                let startFrac = max((startDecimal - rangeStart) / totalHours, 0)
+                let heightFrac = min((endDecimal - startDecimal) / totalHours, 1 - startFrac)
+                let startText = startM == 0 ? "\(startH)" : "\(startH):\(String(format: "%02d", startM))"
+                let endText = endM == 0 ? "\(endH)" : "\(endH):\(String(format: "%02d", endM))"
+                return MiniBlock(
+                    id: lesson.id,
+                    startFraction: startFrac,
+                    heightFraction: heightFrac,
+                    timeText: "\(startText)-\(endText)",
+                    studentName: lesson.studentName,
+                    courseColorHex: lesson.course?.colorHex ?? "#78909C"
+                )
+            }
+        }
+
+        return MonthSnapshot(
+            cells: cells,
+            lessonsByDate: grouped,
+            timeRange: tr,
+            blocksByDate: blocks,
+            weeks: max(cells.count / 7, 1)
+        )
     }
 
-    private var isCurrentMonth: Bool {
-        let now = Date.now
-        let range = DateHelper.monthRange(for: displayMonth)
-        return now >= range.start && now < range.end
-    }
-
-    private var weeksCount: Int {
-        calendarCells.count / 7
-    }
-
-    private func cellHeight(in geometry: GeometryProxy) -> CGFloat {
-        let navHeight: CGFloat = 44  // month navigation
+    private func cellHeight(in geometry: GeometryProxy, weeks: Int) -> CGFloat {
+        let navHeight: CGFloat = 44
         let weekdayHeight: CGFloat = 24
         let legendHeight: CGFloat = 32
         let available = geometry.size.height - navHeight - weekdayHeight - legendHeight
-        return max(available / CGFloat(weeksCount), 70)
+        return max(available / CGFloat(weeks), 70)
     }
 
     // MARK: - Actions
@@ -140,22 +135,23 @@ struct MonthlyOverviewView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack {
+        let snap = buildSnapshot()
+        return NavigationStack {
             GeometryReader { geometry in
                 VStack(spacing: 0) {
                     monthNavigation
                     weekdayHeaders
 
                     let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
+                    let height = cellHeight(in: geometry, weeks: snap.weeks)
                     LazyVGrid(columns: columns, spacing: 0) {
-                        ForEach(Array(calendarCells.enumerated()), id: \.offset) { _, cell in
+                        ForEach(Array(snap.cells.enumerated()), id: \.offset) { _, cell in
                             let key = DateHelper.startOfDay(cell.date)
-                            let lessons = lessonsByDate[key] ?? []
-                            let height = cellHeight(in: geometry)
+                            let lessonCount = snap.lessonsByDate[key]?.count ?? 0
                             DayAvailabilityCell(
                                 date: cell.date,
-                                blocks: miniBlocks(for: cell.date),
-                                lessonCount: lessons.count,
+                                blocks: snap.blocksByDate[key] ?? [],
+                                lessonCount: lessonCount,
                                 isCurrentMonth: cell.isCurrentMonth,
                                 isToday: DateHelper.isSameDay(cell.date, .now),
                                 showStudents: showStudents,
@@ -223,8 +219,8 @@ struct MonthlyOverviewView: View {
             )) { item in
                 DayScheduleDetailView(
                     date: item.date,
-                    lessons: lessonsByDate[DateHelper.startOfDay(item.date)] ?? [],
-                    timeRange: timeRange,
+                    lessons: snap.lessonsByDate[DateHelper.startOfDay(item.date)] ?? [],
+                    timeRange: snap.timeRange,
                     onNavigateToSchedule: {
                         selectedDay = nil
                         onSelectDate?(item.date)
