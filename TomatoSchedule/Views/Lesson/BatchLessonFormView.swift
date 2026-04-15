@@ -199,50 +199,19 @@ struct BatchLessonFormView: View {
         }
     }
 
+    private var conflictDates: Set<Date> {
+        Set(generatedDates.filter { hasConflict(on: $0) })
+    }
+
     private var previewSection: some View {
-        Section("预览（\(generatedDates.count)节课）") {
-            if generatedDates.isEmpty {
-                Text("请选择重复星期")
-                    .foregroundStyle(.secondary)
-            } else {
-                let progressMap = batchStudentProgress(studentName: studentName)
-
-                ForEach(Array(generatedDates.enumerated()), id: \.offset) { index, date in
-                    HStack {
-                        if hasConflict(on: date) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                                .font(.caption)
-                        }
-                        Text(DateHelper.dateString(date))
-                        Text(DateHelper.weekdaySymbol(date))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(DateHelper.timeString(startTime))-\(DateHelper.timeString(endTime))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        if let studentIdx = progressMap[date] {
-                            Text("第\(studentIdx)节")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            excludedDates.insert(date)
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                    }
-                }
-
-                if generatedDates.count >= 100 {
-                    Text("最多显示100节")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-            }
-        }
+        BatchLessonPreviewSection(
+            generatedDates: generatedDates,
+            progressMap: batchStudentProgress(studentName: studentName),
+            startTime: startTime,
+            endTime: endTime,
+            conflictDates: conflictDates,
+            onExclude: { excludedDates.insert($0) }
+        )
     }
 
     // MARK: - Student Progress

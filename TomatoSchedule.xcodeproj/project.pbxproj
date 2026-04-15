@@ -26,6 +26,7 @@
 		6FEE6EE753DD8A214F1AE1C1 /* StudentListContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3008AA2502415511FAEC14BA /* StudentListContent.swift */; };
 		708518F9B6A39C6865F8D370 /* WeekStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0261067192CEE1E1D25C674B /* WeekStripView.swift */; };
 		753FDA65417D302237B1FB22 /* StudentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6110ECBB630A1C996E52C0A4 /* StudentService.swift */; };
+		754A3407DC4C901D067723E7 /* IncomeRankingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6DE3E904F29CCB87C74AA2 /* IncomeRankingView.swift */; };
 		7688F2914682936F15F9C723 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C257B6E39221631647C47A59 /* Assets.xcassets */; };
 		7ABF928591E6A4CD5C8CA9ED /* LessonDetailCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80336A87D0249A088661554C /* LessonDetailCard.swift */; };
 		7C8342E12053B9C0B59E0322 /* IncomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EF6475E32AE6A9F6E59A9C2 /* IncomeView.swift */; };
@@ -43,6 +44,7 @@
 		CDA0A334707AEE5E384867B9 /* StudentIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EADABD19354E52A24AD8A0CC /* StudentIncomeDetailView.swift */; };
 		CFAF1A24E86E300B8A3FD7A3 /* DayScheduleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A843F3783E3D53F22C7349AB /* DayScheduleDetailView.swift */; };
 		D010F9E5D160BC84E29F8FEF /* MonthlyOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992829360E34D6FECCF12C37 /* MonthlyOverviewView.swift */; };
+		D9BDB3EB39C67B01C61DD6AB /* BatchLessonPreviewSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB322DC8B56B8CAE0AA0F2E1 /* BatchLessonPreviewSection.swift */; };
 		E1D5E5462D671D28FC7E4FDB /* ColorPickerGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DAF408A1977734575226C3 /* ColorPickerGrid.swift */; };
 		E97C6819D728F4D1FFB42A93 /* CalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CDFA32275E91B83B869D167 /* CalendarSyncService.swift */; };
 		F74C2B023E3F1BF593BBE9A7 /* IncomeAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09D2C6C7305D7562B6A17267 /* IncomeAggregator.swift */; };
@@ -92,6 +94,8 @@
 		E523881C8018171A6C3C362D /* LessonTimeGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonTimeGroup.swift; sourceTree = "<group>"; };
 		EADABD19354E52A24AD8A0CC /* StudentIncomeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudentIncomeDetailView.swift; sourceTree = "<group>"; };
 		F4ECC14C14A1254BAB2A6710 /* MonthGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthGridView.swift; sourceTree = "<group>"; };
+		FB322DC8B56B8CAE0AA0F2E1 /* BatchLessonPreviewSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchLessonPreviewSection.swift; sourceTree = "<group>"; };
+		FF6DE3E904F29CCB87C74AA2 /* IncomeRankingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeRankingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -144,6 +148,7 @@
 			isa = PBXGroup;
 			children = (
 				046FCF258BE7E38CEA5F0638 /* BatchLessonFormView.swift */,
+				FB322DC8B56B8CAE0AA0F2E1 /* BatchLessonPreviewSection.swift */,
 				987066EFD50D2D16BA581271 /* LessonFormView.swift */,
 			);
 			path = Lesson;
@@ -226,6 +231,7 @@
 		E3983953CD995FF6E60E94ED /* Income */ = {
 			isa = PBXGroup;
 			children = (
+				FF6DE3E904F29CCB87C74AA2 /* IncomeRankingView.swift */,
 				5EF6475E32AE6A9F6E59A9C2 /* IncomeView.swift */,
 				EADABD19354E52A24AD8A0CC /* StudentIncomeDetailView.swift */,
 			);
@@ -334,6 +340,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BCE218CC7FF2960E8AD7577D /* BatchLessonFormView.swift in Sources */,
+				D9BDB3EB39C67B01C61DD6AB /* BatchLessonPreviewSection.swift in Sources */,
 				2D875E712945366494BD5972 /* CalendarHeaderView.swift in Sources */,
 				9F1A35A764682820F0A4FE89 /* CalendarImportView.swift in Sources */,
 				E97C6819D728F4D1FFB42A93 /* CalendarSyncService.swift in Sources */,
@@ -347,6 +354,7 @@
 				FE6BB5285FD1D912BDC180D7 /* DotIndicator.swift in Sources */,
 				BA09EC497413825C98EFDFD5 /* EmptyStateView.swift in Sources */,
 				F74C2B023E3F1BF593BBE9A7 /* IncomeAggregator.swift in Sources */,
+				754A3407DC4C901D067723E7 /* IncomeRankingView.swift in Sources */,
 				C1BC2E5651B36F50C5BE535F /* IncomeTypes.swift in Sources */,
 				7C8342E12053B9C0B59E0322 /* IncomeView.swift in Sources */,
 				53ECFDE566A52B497EC1F3E9 /* Lesson.swift in Sources */,
