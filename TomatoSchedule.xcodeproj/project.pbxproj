@@ -37,6 +37,7 @@
 		B6E11A71AC677DEBA0A6553B /* MonthGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ECC14C14A1254BAB2A6710 /* MonthGridView.swift */; };
 		BA09EC497413825C98EFDFD5 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A8E304C56DC0B4A04446273 /* EmptyStateView.swift */; };
 		BCE218CC7FF2960E8AD7577D /* BatchLessonFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 046FCF258BE7E38CEA5F0638 /* BatchLessonFormView.swift */; };
+		C1BC2E5651B36F50C5BE535F /* IncomeTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C184097E687313D5B899AD9 /* IncomeTypes.swift */; };
 		C360CFE44E625787ECE1548F /* 365bbb518e36d0d74df2992bff44b83c.JPG in Resources */ = {isa = PBXBuildFile; fileRef = 782DB213CFCD6D3B4180430F /* 365bbb518e36d0d74df2992bff44b83c.JPG */; };
 		C40F156B230A05DED70AF265 /* LessonTimeGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E523881C8018171A6C3C362D /* LessonTimeGroup.swift */; };
 		CDA0A334707AEE5E384867B9 /* StudentIncomeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EADABD19354E52A24AD8A0CC /* StudentIncomeDetailView.swift */; };
@@ -44,6 +45,7 @@
 		D010F9E5D160BC84E29F8FEF /* MonthlyOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992829360E34D6FECCF12C37 /* MonthlyOverviewView.swift */; };
 		E1D5E5462D671D28FC7E4FDB /* ColorPickerGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DAF408A1977734575226C3 /* ColorPickerGrid.swift */; };
 		E97C6819D728F4D1FFB42A93 /* CalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CDFA32275E91B83B869D167 /* CalendarSyncService.swift */; };
+		F74C2B023E3F1BF593BBE9A7 /* IncomeAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09D2C6C7305D7562B6A17267 /* IncomeAggregator.swift */; };
 		FE6BB5285FD1D912BDC180D7 /* DotIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FF09AE172F706C428AE3B7 /* DotIndicator.swift */; };
 /* End PBXBuildFile section */
 
@@ -51,6 +53,7 @@
 		0261067192CEE1E1D25C674B /* WeekStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekStripView.swift; sourceTree = "<group>"; };
 		02FF09AE172F706C428AE3B7 /* DotIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DotIndicator.swift; sourceTree = "<group>"; };
 		046FCF258BE7E38CEA5F0638 /* BatchLessonFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchLessonFormView.swift; sourceTree = "<group>"; };
+		09D2C6C7305D7562B6A17267 /* IncomeAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeAggregator.swift; sourceTree = "<group>"; };
 		0A8E304C56DC0B4A04446273 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		0CDFA32275E91B83B869D167 /* CalendarSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncService.swift; sourceTree = "<group>"; };
 		14DAF408A1977734575226C3 /* ColorPickerGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerGrid.swift; sourceTree = "<group>"; };
@@ -60,6 +63,7 @@
 		2F7BF114D99FD5363F966ADB /* PresetColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetColors.swift; sourceTree = "<group>"; };
 		3008AA2502415511FAEC14BA /* StudentListContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudentListContent.swift; sourceTree = "<group>"; };
 		35963744F4BEE863D2511ECB /* ScrollCalendarFold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollCalendarFold.swift; sourceTree = "<group>"; };
+		3C184097E687313D5B899AD9 /* IncomeTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeTypes.swift; sourceTree = "<group>"; };
 		5A6E50CC13F176404ADEFF97 /* TomatoSchedule.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TomatoSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BE88D6BC3F68AAB8C0DD64D /* TimeSlotPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSlotPicker.swift; sourceTree = "<group>"; };
 		5EF6475E32AE6A9F6E59A9C2 /* IncomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeView.swift; sourceTree = "<group>"; };
@@ -149,6 +153,8 @@
 			isa = PBXGroup;
 			children = (
 				D4402879585B36E50709B62D /* DateHelper.swift */,
+				09D2C6C7305D7562B6A17267 /* IncomeAggregator.swift */,
+				3C184097E687313D5B899AD9 /* IncomeTypes.swift */,
 				2F7BF114D99FD5363F966ADB /* PresetColors.swift */,
 				BEF1FE050E72268BCC5E04F0 /* StudentProgress.swift */,
 			);
@@ -340,6 +346,8 @@
 				CFAF1A24E86E300B8A3FD7A3 /* DayScheduleDetailView.swift in Sources */,
 				FE6BB5285FD1D912BDC180D7 /* DotIndicator.swift in Sources */,
 				BA09EC497413825C98EFDFD5 /* EmptyStateView.swift in Sources */,
+				F74C2B023E3F1BF593BBE9A7 /* IncomeAggregator.swift in Sources */,
+				C1BC2E5651B36F50C5BE535F /* IncomeTypes.swift in Sources */,
 				7C8342E12053B9C0B59E0322 /* IncomeView.swift in Sources */,
 				53ECFDE566A52B497EC1F3E9 /* Lesson.swift in Sources */,
 				7ABF928591E6A4CD5C8CA9ED /* LessonDetailCard.swift in Sources */,
