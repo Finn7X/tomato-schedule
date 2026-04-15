@@ -226,7 +226,7 @@ struct StudentDetailView: View {
 
     private func syncAfterRename(newKey: String) {
         let affected = allLessons.filter { normalizeStudentName($0.studentName) == newKey }
-        let indexMap = CalendarSyncService.buildStudentIndexMap(Array(allLessons))
+        let indexMap = buildStudentIndexMap(Array(allLessons))
         var syncFailed = false
         for lesson in affected {
             do {

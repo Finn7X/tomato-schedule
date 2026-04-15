@@ -77,7 +77,7 @@ final class CalendarSyncService: ObservableObject {
     // MARK: - Quick Export (write-only)
 
     func quickExportAll(_ lessons: [Lesson]) throws -> Int {
-        let indexMap = Self.buildStudentIndexMap(lessons)
+        let indexMap = buildStudentIndexMap(lessons)
         var count = 0
         for lesson in lessons {
             let event = EKEvent(eventStore: store)
@@ -95,7 +95,7 @@ final class CalendarSyncService: ObservableObject {
     func syncAllLessons(_ lessons: [Lesson]) throws -> Int {
         let calendar = try getOrCreateAppCalendar()
         let allEvents = fetchAllEvents(in: calendar)
-        let indexMap = Self.buildStudentIndexMap(lessons)
+        let indexMap = buildStudentIndexMap(lessons)
 
         // Build URL index: lesson UUID → EKEvent
         var urlIndex: [UUID: EKEvent] = [:]
@@ -168,7 +168,7 @@ final class CalendarSyncService: ObservableObject {
 
     func syncLessonsForCourse(_ course: Course, allLessons: [Lesson]) throws {
         guard syncEnabled else { return }
-        let indexMap = Self.buildStudentIndexMap(allLessons)
+        let indexMap = buildStudentIndexMap(allLessons)
         for lesson in course.lessons {
             try syncLesson(lesson, studentIndex: indexMap[lesson.id])
         }
@@ -236,28 +236,6 @@ final class CalendarSyncService: ObservableObject {
         if event.url == nil {
             event.url = buildEventURL(for: lesson)
         }
-    }
-
-    // MARK: - Student Index Map
-
-    static func buildStudentIndexMap(_ lessons: [Lesson]) -> [UUID: Int] {
-        var groups: [String: [Lesson]] = [:]
-        for lesson in lessons {
-            let key = normalizeStudentName(lesson.studentName)
-            guard !key.isEmpty else { continue }
-            groups[key, default: []].append(lesson)
-        }
-        var result: [UUID: Int] = [:]
-        for (_, group) in groups {
-            let sorted = group.sorted {
-                if $0.startTime != $1.startTime { return $0.startTime < $1.startTime }
-                return $0.id.uuidString < $1.id.uuidString
-            }
-            for (i, lesson) in sorted.enumerated() {
-                result[lesson.id] = i + 1
-            }
-        }
-        return result
     }
 
     private func findEvent(for lesson: Lesson, in calendar: EKCalendar) -> EKEvent? {

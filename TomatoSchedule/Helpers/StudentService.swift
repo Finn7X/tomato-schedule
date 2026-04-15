@@ -12,6 +12,15 @@ func normalizeStudentName(_ raw: String) -> String {
        .joined(separator: " ")
 }
 
+// MARK: - Ordering
+
+/// Standard lesson ordering for student-scoped operations:
+/// earlier startTime first, with id.uuidString as stable tie-breaker.
+func lessonOrdering(_ a: Lesson, _ b: Lesson) -> Bool {
+    if a.startTime != b.startTime { return a.startTime < b.startTime }
+    return a.id.uuidString < b.id.uuidString
+}
+
 // MARK: - StudentProgress
 
 /// Student's global lesson position and cumulative hours
@@ -28,10 +37,7 @@ func studentProgress(for lesson: Lesson, allLessons: [Lesson]) -> StudentProgres
     guard !key.isEmpty else { return nil }
     let studentLessons = allLessons
         .filter { normalizeStudentName($0.studentName) == key }
-        .sorted {
-            if $0.startTime != $1.startTime { return $0.startTime < $1.startTime }
-            return $0.id.uuidString < $1.id.uuidString  // stable tie-breaker
-        }
+        .sorted(by: lessonOrdering)
 
     guard let index = studentLessons.firstIndex(where: { $0.id == lesson.id }) else { return nil }
 
@@ -58,10 +64,27 @@ func computeStudentIndex(for targetLesson: Lesson, existingLessons: [Lesson]) ->
         normalizeStudentName($0.studentName) == key && $0.id != targetLesson.id
     }
     pool.append(targetLesson)
-    pool.sort {
-        if $0.startTime != $1.startTime { return $0.startTime < $1.startTime }
-        return $0.id.uuidString < $1.id.uuidString
-    }
+    pool.sort(by: lessonOrdering)
     guard let idx = pool.firstIndex(where: { $0.id == targetLesson.id }) else { return nil }
     return idx + 1
+}
+
+// MARK: - Student Index Map (batch)
+
+/// Build a map of lesson UUID → student index (1-based) across all lessons,
+/// grouping by normalized student name. Lessons with empty names are skipped.
+func buildStudentIndexMap(_ lessons: [Lesson]) -> [UUID: Int] {
+    var groups: [String: [Lesson]] = [:]
+    for lesson in lessons {
+        let key = normalizeStudentName(lesson.studentName)
+        guard !key.isEmpty else { continue }
+        groups[key, default: []].append(lesson)
+    }
+    var result: [UUID: Int] = [:]
+    for (_, group) in groups {
+        for (i, lesson) in group.sorted(by: lessonOrdering).enumerated() {
+            result[lesson.id] = i + 1
+        }
+    }
+    return result
 }
