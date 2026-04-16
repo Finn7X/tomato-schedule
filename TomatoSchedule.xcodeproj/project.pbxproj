@@ -25,6 +25,7 @@
 		5559B30BB1E2F13CD5FF2BF3 /* StudentDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655CA031D05EAB6FD0096F6E /* StudentDetailView.swift */; };
 		5CDE277FF2B8926D7E5F6416 /* IMG_8444.PNG in Resources */ = {isa = PBXBuildFile; fileRef = A0D007F538F5C43E99F1DD2C /* IMG_8444.PNG */; };
 		5FEE23E7D4A510CDC9ACAA35 /* LessonLaneLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4748AB8D05A37DB39A40E208 /* LessonLaneLayoutTests.swift */; };
+		6474532934452D01EBE71DDF /* ScrollViewOffsetReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3985F0997FD1722C2EFE2BBD /* ScrollViewOffsetReader.swift */; };
 		6FEE6EE753DD8A214F1AE1C1 /* StudentListContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3008AA2502415511FAEC14BA /* StudentListContent.swift */; };
 		708518F9B6A39C6865F8D370 /* WeekStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0261067192CEE1E1D25C674B /* WeekStripView.swift */; };
 		753FDA65417D302237B1FB22 /* StudentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6110ECBB630A1C996E52C0A4 /* StudentService.swift */; };
@@ -84,6 +85,7 @@
 		2F7BF114D99FD5363F966ADB /* PresetColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetColors.swift; sourceTree = "<group>"; };
 		3008AA2502415511FAEC14BA /* StudentListContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudentListContent.swift; sourceTree = "<group>"; };
 		35963744F4BEE863D2511ECB /* ScrollCalendarFold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollCalendarFold.swift; sourceTree = "<group>"; };
+		3985F0997FD1722C2EFE2BBD /* ScrollViewOffsetReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollViewOffsetReader.swift; sourceTree = "<group>"; };
 		3C184097E687313D5B899AD9 /* IncomeTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeTypes.swift; sourceTree = "<group>"; };
 		3D91F740B89E265A7927B894 /* TomatoScheduleTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TomatoScheduleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		409EA9C6C81E970882B62508 /* LessonLaneLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LessonLaneLayout.swift; sourceTree = "<group>"; };
@@ -189,6 +191,7 @@
 				3C184097E687313D5B899AD9 /* IncomeTypes.swift */,
 				409EA9C6C81E970882B62508 /* LessonLaneLayout.swift */,
 				2F7BF114D99FD5363F966ADB /* PresetColors.swift */,
+				3985F0997FD1722C2EFE2BBD /* ScrollViewOffsetReader.swift */,
 				6110ECBB630A1C996E52C0A4 /* StudentService.swift */,
 				192D6158C93BE513BBCD37D0 /* WeekSnapshot.swift */,
 			);
@@ -430,6 +433,7 @@
 				46074D0AC974525BF9ED4191 /* PresetColors.swift in Sources */,
 				069E13039F037EECA601C876 /* ScheduleView.swift in Sources */,
 				50AA2A0417C8A3CD78D2C1F2 /* ScrollCalendarFold.swift in Sources */,
+				6474532934452D01EBE71DDF /* ScrollViewOffsetReader.swift in Sources */,
 				33C6A7BF2E807C058DD5482E /* SettingsView.swift in Sources */,
 				B0807C67D7C07455250B882E /* StatisticsBar.swift in Sources */,
 				5559B30BB1E2F13CD5FF2BF3 /* StudentDetailView.swift in Sources */,
