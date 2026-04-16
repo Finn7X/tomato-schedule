@@ -80,4 +80,32 @@ enum DateHelper {
         combined.minute = timeComps.minute
         return calendar.date(from: combined) ?? date
     }
+
+    // MARK: - Week helpers
+
+    static func weekStart(for date: Date) -> Date {
+        let cal = calendar
+        let weekday = cal.component(.weekday, from: date)
+        let daysFromMonday = (weekday + 5) % 7 // Monday=0
+        return cal.startOfDay(for: cal.date(byAdding: .day, value: -daysFromMonday, to: date)!)
+    }
+
+    static func weekRangeText(_ weekStart: Date) -> String {
+        let cal = calendar
+        let sunday = cal.date(byAdding: .day, value: 6, to: weekStart)!
+        let startYear = cal.component(.year, from: weekStart)
+        let endYear = cal.component(.year, from: sunday)
+        let startMonth = cal.component(.month, from: weekStart)
+        let endMonth = cal.component(.month, from: sunday)
+        let startDay = cal.component(.day, from: weekStart)
+        let endDay = cal.component(.day, from: sunday)
+
+        if startYear != endYear {
+            return "\(startYear) 年 \(startMonth) 月 \(startDay) 日 – \(endYear) 年 \(endMonth) 月 \(endDay) 日"
+        } else if startMonth != endMonth {
+            return "\(startMonth) 月 \(startDay) 日 – \(endMonth) 月 \(endDay) 日"
+        } else {
+            return "\(startYear) 年 \(startMonth) 月 \(startDay) – \(endDay) 日"
+        }
+    }
 }
