@@ -36,6 +36,7 @@
 		937CBA23E5291F14BE67B3F0 /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8D84A988E7CCB7511005207 /* Course.swift */; };
 		9F1A35A764682820F0A4FE89 /* CalendarImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC1C2276BADDA8F5394D163 /* CalendarImportView.swift */; };
 		A3D0AA5F0105C79FF15B9D6F /* CourseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC7F23237E7A0E7EE5597D2 /* CourseFormView.swift */; };
+		AE644BE8F2A692CAA09D23B2 /* AppOrientationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FBB937F6041D4ADC64A545 /* AppOrientationCoordinator.swift */; };
 		B0807C67D7C07455250B882E /* StatisticsBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10BD1DD93C095F1729C4716 /* StatisticsBar.swift */; };
 		B6E11A71AC677DEBA0A6553B /* MonthGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ECC14C14A1254BAB2A6710 /* MonthGridView.swift */; };
 		BA09EC497413825C98EFDFD5 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A8E304C56DC0B4A04446273 /* EmptyStateView.swift */; };
@@ -74,6 +75,7 @@
 		09D2C6C7305D7562B6A17267 /* IncomeAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomeAggregator.swift; sourceTree = "<group>"; };
 		0A8E304C56DC0B4A04446273 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		0CDFA32275E91B83B869D167 /* CalendarSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncService.swift; sourceTree = "<group>"; };
+		12FBB937F6041D4ADC64A545 /* AppOrientationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppOrientationCoordinator.swift; sourceTree = "<group>"; };
 		14DAF408A1977734575226C3 /* ColorPickerGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPickerGrid.swift; sourceTree = "<group>"; };
 		192D6158C93BE513BBCD37D0 /* WeekSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekSnapshot.swift; sourceTree = "<group>"; };
 		1F09533DA20CF516C219F56C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -181,6 +183,7 @@
 		551C1B3C074CB5322D4F9062 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				12FBB937F6041D4ADC64A545 /* AppOrientationCoordinator.swift */,
 				D4402879585B36E50709B62D /* DateHelper.swift */,
 				09D2C6C7305D7562B6A17267 /* IncomeAggregator.swift */,
 				3C184097E687313D5B899AD9 /* IncomeTypes.swift */,
@@ -396,6 +399,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AE644BE8F2A692CAA09D23B2 /* AppOrientationCoordinator.swift in Sources */,
 				BCE218CC7FF2960E8AD7577D /* BatchLessonFormView.swift in Sources */,
 				D9BDB3EB39C67B01C61DD6AB /* BatchLessonPreviewSection.swift in Sources */,
 				2D875E712945366494BD5972 /* CalendarHeaderView.swift in Sources */,

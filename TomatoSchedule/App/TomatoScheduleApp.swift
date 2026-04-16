@@ -4,10 +4,13 @@ import SwiftData
 @main
 struct TomatoScheduleApp: App {
     @Environment(\.scenePhase) private var scenePhase
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var orientationCoordinator = AppOrientationCoordinator.shared
 
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environmentObject(orientationCoordinator)
                 .onAppear {
                     migrateV5PriceFreeze()
                     autoCompletePastLessons()
