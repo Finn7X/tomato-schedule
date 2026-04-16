@@ -1,8 +1,8 @@
 # 月度总览横屏周视图 — 设计规格文档
 
 > 日期：2026-04-15
-> 版本：revision-3（针对 revision-2 review 收口 5 个工程落点：Coordinator 所有权/API、discrete ScrollAnchor、visibleWeeks 窗口重建、PreviewContext 建模、测试 target 扩容）
-> 状态：待再次评审
+> 版本：revision-4（修 PreviewContext 编译 blocker、统一全文合同术语、iOS 17 scroll helper 路径明确化、示例代码对齐真实 app 入口）
+> 状态：待定稿确认
 > 关联：扩展自 `docs/specs/2026-04-07-monthly-overview.md`；review 文档 `docs/reviews/2026-04-15-monthly-overview-landscape-review.md` + `docs/reviews/2026-04-15-monthly-overview-landscape-review-revision-2.md`
 
 ---
@@ -44,7 +44,7 @@
 MonthlyOverviewView (容器)
 │  @Query allLessons
 │  @State focusDate                    ← 单一 source of truth（§7.1）
-│  @StateObject orientationCoordinator  ← scene-scoped，非 singleton（§3.1）
+│  @EnvironmentObject coordinator        ← app-scope 单例 AppOrientationCoordinator.shared（§3.1）
 │  @Environment verticalSizeClass
 │
 ├── compact == false (竖屏)
@@ -78,7 +78,7 @@ MonthlyOverviewView (容器)
 - `LessonBlockView`：单个课时块，含 `+N` 角标渲染与 scaleEffect 点击反馈
 - `NowIndicatorView`：红色现在时刻指示线 + Timer
 - `LessonInfoCard`：preview 卡片（底部 sheet 内容，非 popover，§6.3）
-- `AppOrientationCoordinator`（helper）：`ObservableObject`，`AppDelegate` 据此动态决定支持方向；scene-scoped 非 singleton（§3.1）
+- `AppOrientationCoordinator`（helper）：`ObservableObject` app-scope 单例，`AppDelegate` 据此动态决定支持方向（§3.1）
 - `LessonLaneLayout`（helper）：返回 `ConflictCluster[]`，周视图与 `DayScheduleDetailView` 共用（§7.4）
 - `WeekSnapshot` / `ConflictCluster` / `PlacedBlock`（helper）：数据模型层承接 `+N` 合并与跨天截断（§7.3）
 
@@ -146,7 +146,12 @@ extension UIApplication {
        @StateObject private var orientationCoordinator = AppOrientationCoordinator.shared
 
        var body: some Scene {
-           WindowGroup { ContentView().environmentObject(orientationCoordinator) }
+           WindowGroup {
+               MainTabView()
+                   .environmentObject(orientationCoordinator)
+                   .onAppear { migrateV5PriceFreeze(); autoCompletePastLessons() }
+           }
+           .modelContainer(for: [Course.self, Lesson.self])
        }
    }
    ```
@@ -337,9 +342,9 @@ codex review 提出："用户真正的痛点是竖屏 MiniBlock 过小 → 应�
 ### 6.2 纵向滚动（每周独立锚点）
 
 - **每周独立 `ScrollView`**，滚动偏移由 `scrollAnchorByWeek[weekStart]` 记录（§7.5）
-- **初次进入（本周页）**：`scrollAnchorByWeek[thisWeek] = .nowMinus30Minutes`，渲染时 `scrollTo(nowMinus30MinutesOffset)`
+- **初次进入（本周页）**：`scrollAnchorByWeek[thisWeek] = .nowRounded`，渲染时 `scrollTo(currentHour, anchor: .top)`（§7.5 discrete anchor）
 - **切到历史/未来周**（该周无缓存）：`scrollAnchorByWeek[week] = .hour(9)`，滚到 9:00 刻度
-- **用户手动滚动**：`onScrollGeometryChange`（iOS 18）回调写回 `.minutes(offset)`；用户回翻到该周时恢复位置
+- **用户手动滚动**：`onScrollGeometryChange`（iOS 18）或 `ScrollViewOffsetReader`（iOS 17 兼容 helper，见 §7.5 注）回调读 contentOffset.y → 换算最近整点 hour → 写入 `.hour(H)`；用户回翻到该周时恢复
 - **"今天"按钮**（必须按此顺序，见 §7.8）：
   1. `recenterVisibleWeeks(around: today.weekStart, radius: 2)`——先重建窗口，避免 TabView selection 落空
   2. `focusDate = Date()`——触发 TabView 切到本周页（此时本周 tag 已在 `visibleWeekStarts` 中）
@@ -619,11 +624,14 @@ ScrollViewReader { reader in
 
 ```swift
 // Helpers/WeekSnapshot.swift（或独立文件）
-struct PreviewContext: Identifiable, Equatable {
+struct PreviewContext: Identifiable {
     let id: UUID                  // = lesson.id，确保 .sheet(item:) 换 lesson 时会触发切换
     let lesson: Lesson
     let overflowCompanions: [Lesson]  // 被合并到 "+N" 的同时段课时；常规块为空数组
     let weekStart: Date               // 来自哪一周的 snapshot
+    // 注意：不遵循 Equatable。Lesson 是 @Model class，不自动合成 Equatable。
+    // .sheet(item:) 仅依赖 Identifiable（id 变化触发 sheet 内容切换）。
+    // 若未来需要 onChange(of:) 等比较，按 id 手动实现。
 }
 ```
 
@@ -770,7 +778,7 @@ private func extendVisibleWeeksIfNeeded(current: Date, radius: Int = 2) {
 ```
 TomatoSchedule/
 ├── Helpers/
-│   ├── AppOrientationCoordinator.swift ← ObservableObject + AppDelegate 支持（scene-scoped）
+│   ├── AppOrientationCoordinator.swift ← ObservableObject app-scope 单例 + AppDelegate 支持
 │   ├── LessonLaneLayout.swift          ← 车道分配 + ConflictCluster 构建
 │   ├── WeekSnapshot.swift              ← WeekSnapshot / DayColumn / ConflictCluster / PlacedBlock + builder
 │   └── ScrollAnchor.swift              ← 每周滚动锚点类型（小文件，<30 行，也可内联 WeekTimelineView）
@@ -892,7 +900,7 @@ TomatoScheduleTests/
 **交互**：
 - [ ] 横滑切周轻触觉反馈
 - [ ] 每周独立滚动位置：滑到 A 周滚到 15:00 → 切到 B 周（滚到 9:00）→ 切回 A 周（恢复 15:00）
-- [ ] 点"今天"：切回本周 + 滚到当前时刻前 30 分钟 + 成功触觉
+- [ ] 点"今天"：recenter 窗口 + 切回本周 + 滚到当前整点行 `.hour(currentHour)` + 成功触觉
 - [ ] 本周时"今天"按钮置灰不可点
 - [ ] 点击课时块：底部 sheet 小态弹出，时间轴仍可见
 - [ ] sheet 小态时横滑切周：sheet 自动关闭（`onChange(of: currentWeekStart)`）
@@ -936,7 +944,7 @@ TomatoScheduleTests/
 | `UIWindowScene.requestGeometryUpdate` 在 iOS 16+ 可用 | 项目最低 iOS 17（SwiftData 前提），安全 |
 | 主/兜底双路径导致方向切换边界冲突 | 验收清单覆盖"点 × 正常退出"和"非主动退出"两条路径；实现时主路径必须走 `dismissWithOrientationRestore()` |
 | `@Query` 全量加载性能 | 当前教师数据量 <数千课时，内存过滤 <10ms；若未来 > 5000 再考虑谓词 |
-| `onScrollGeometryChange` 在 iOS 17 不存在（iOS 18 API） | 项目最低 iOS 17 但若实际最低支持需兼容 17，用 `ScrollOffsetObserver`（现有 UIKit KVO bridge，`ScrollCalendarFold.swift`）兼容；与 discrete anchor 方案天然兼容（读 offsetY → 换算整点 hour → 写 cache） |
+| `onScrollGeometryChange` 在 iOS 17 不存在（iOS 18 API） | 项目最低 iOS 17；现有 `ScrollOffsetObserver`（`ScrollCalendarFold.swift`）为 List 场景定制（注释 "KVO inside List row"），**不能直接复用于普通 `ScrollView`**。Plan 阶段必须二选一：① 泛化现有 helper 使 `_IntrospectionView.trySetupObservation` 不依赖 UICollectionViewCell 父链 ② 拆出独立 `ScrollViewOffsetReader`。discrete anchor 方案天然兼容两条路（读 offsetY → 换算整点 hour → 写 cache） |
 | `focusDate` 语义变化影响 onSelectDate 回调 | `ScheduleView` 调用点同步调整：容器 `onSelectDate?(focusDate)`；验收清单覆盖 |
 | 日视图"+N" 气泡改动视觉 | 属于 bug 修复（§5.2）；若用户偏好保留原静默丢弃可在 plan 阶段加开关，但默认展示 |
 | 滚动位置精度降到整点粒度 | 用户手动滚到 10:37 离开该周后再回来，会恢复到 10:00。该妥协有明确文字说明（§7.5）；若需半点/分钟精度，plan 阶段渐进升级不破坏合同 |
@@ -958,7 +966,7 @@ TomatoScheduleTests/
 
 - **ⓘ 图例按钮**是否必要？当前倾向保留作为次级入口，若用户验收时觉得冗余可在实施阶段移除
 - **半点虚线**在时间轴上是否过密？默认开启，横屏实际渲染后若感觉杂乱可关闭
-- **`onScrollGeometryChange` 兼容性**：iOS 17 设备兼容方案（`GeometryReader + PreferenceKey` vs iOS 18+ API）在 plan 阶段确定具体实现
+- **iOS 17 scroll offset 读取**：当前 `ScrollOffsetObserver` 是 List 场景专用（KVO 查 UICollectionViewCell 上层的 UIScrollView），周视图用的是普通 `ScrollView`。Plan 阶段需确认：是否泛化现有 helper 使其也支持非 List 的 `ScrollView` 上层查找，或拆出独立的 `ScrollViewOffsetReader`
 
 这三项留到实施/验收阶段决定，不阻塞设计定稿。
 
@@ -1003,16 +1011,15 @@ TomatoScheduleTests/
 **未来升级路径**（不阻塞本 spec 实施）：
 
 ```swift
-// 演进方向示意，不在本 spec 范围
+// 演进方向示意，不在本 spec 范围。
+// 届时需将 AppOrientationCoordinator.init 从 private 改为 internal，
+// 并弃用 .shared 单例改走 registry 查找。
 final class AppOrientationRegistry {
     static let shared = AppOrientationRegistry()
     private var map: [UIWindowScene: AppOrientationCoordinator] = [:]
 
     func coordinator(for scene: UIWindowScene) -> AppOrientationCoordinator {
-        if let c = map[scene] { return c }
-        let c = AppOrientationCoordinator()
-        map[scene] = c
-        return c
+        map[scene, default: AppOrientationCoordinator(/* internal init */)]
     }
 
     func remove(scene: UIWindowScene) { map[scene] = nil }
