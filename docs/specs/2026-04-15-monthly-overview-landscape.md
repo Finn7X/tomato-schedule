@@ -596,7 +596,7 @@ ForEach(timeRange.start...timeRange.end, id: \.self) { hour in
         .id(hour)                     // ScrollViewReader 跳转的 anchor
 }
 
-// 用户手动滚动：通过 onScrollGeometryChange (iOS 18) 或 ScrollOffsetObserver (iOS 17 兼容)
+// 用户手动滚动：通过 onScrollGeometryChange (iOS 18) 或 ScrollViewOffsetReader (iOS 17 兼容)
 // 读当前 contentOffset.y，反算"最接近顶部的整点行" → 写入 cache
 .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offsetY in
     let hour = nearestHourForOffset(offsetY)  // offsetY / hourHeight + timeRange.start
@@ -960,7 +960,7 @@ TomatoScheduleTests/
 
 **iPhone 13 设备基线验收**（横屏 390pt 高度 / iOS 17.x）：
 - [ ] 默认进入周视图时，一屏实际可见 ~5–6 小时（`hourHeight` 自适应至 ~49pt）
-- [ ] 课时块（30min）在自适应 `hourHeight` 下仍可读（学生名 + 时间行均可辨认）
+- [ ] 课时块（30min ≈ 24.5pt）触发 `< 28pt` 单行规则：仅显示学生姓名，时间信息通过点击 preview sheet 查看；姓名文字清晰可辨
 - [ ] preview sheet 小态（`.fraction(0.35)`）弹出后，上方仍保留 ≥3 小时时间轴可见
 - [ ] preview sheet 上拉展开态为 `.large`（非 `.medium`），内容完整显示（课程、学生、时间、备注、价格、overflow）
 - [ ] `.large` 态下背景交互自动屏蔽；下拉回 `.fraction(0.35)` 后背景交互恢复
@@ -983,7 +983,7 @@ TomatoScheduleTests/
 | `UIWindowScene.requestGeometryUpdate` 在 iOS 16+ 可用 | 项目最低 iOS 17（SwiftData 前提），安全 |
 | 主/兜底双路径导致方向切换边界冲突 | 验收清单覆盖"点 × 正常退出"和"非主动退出"两条路径；实现时主路径必须走 `dismissWithOrientationRestore()` |
 | `@Query` 全量加载性能 | 当前教师数据量 <数千课时，内存过滤 <10ms；若未来 > 5000 再考虑谓词 |
-| `onScrollGeometryChange` 在 iOS 17 不存在（iOS 18 API） | 项目最低 iOS 17；现有 `ScrollOffsetObserver`（`ScrollCalendarFold.swift`）为 List 场景定制（注释 "KVO inside List row"），**不能直接复用于普通 `ScrollView`**。Plan 阶段必须二选一：① 泛化现有 helper 使 `_IntrospectionView.trySetupObservation` 不依赖 UICollectionViewCell 父链 ② 拆出独立 `ScrollViewOffsetReader`。discrete anchor 方案天然兼容两条路（读 offsetY → 换算整点 hour → 写 cache） |
+| `onScrollGeometryChange` 在 iOS 17 不存在（iOS 18 API） | 项目最低 iOS 17；iOS 17 兼容方案统一命名为 **`ScrollViewOffsetReader`**（新文件），基于现有 `ScrollOffsetObserver` 的 KVO 思路但**不限定 UICollectionViewCell 父链**——`trySetupObservation` 直接向上遍历到任意 `UIScrollView` 即可（普通 SwiftUI `ScrollView` 底层也是 `UIScrollView`）。Plan 阶段实现时可从 `ScrollOffsetObserver` 复制并简化（去掉 List-specific 注释与假设），两者共存互不影响。discrete anchor 方案天然兼容（读 offsetY → 换算整点 hour → 写 cache） |
 | `focusDate` 语义变化影响 onSelectDate 回调 | `ScheduleView` 调用点同步调整：容器 `onSelectDate?(focusDate)`；验收清单覆盖 |
 | 日视图"+N" 气泡改动视觉 | 属于 bug 修复（§5.2）；若用户偏好保留原静默丢弃可在 plan 阶段加开关，但默认展示 |
 | 滚动位置精度降到整点粒度 | 用户手动滚到 10:37 离开该周后再回来，会恢复到 10:00。该妥协有明确文字说明（§7.5）；若需半点/分钟精度，plan 阶段渐进升级不破坏合同 |
@@ -1005,7 +1005,7 @@ TomatoScheduleTests/
 
 - **ⓘ 图例按钮**是否必要？当前倾向保留作为次级入口，若用户验收时觉得冗余可在实施阶段移除
 - **半点虚线**在时间轴上是否过密？默认开启，横屏实际渲染后若感觉杂乱可关闭
-- **iOS 17 scroll offset 读取**：当前 `ScrollOffsetObserver` 是 List 场景专用（KVO 查 UICollectionViewCell 上层的 UIScrollView），周视图用的是普通 `ScrollView`。Plan 阶段需确认：是否泛化现有 helper 使其也支持非 List 的 `ScrollView` 上层查找，或拆出独立的 `ScrollViewOffsetReader`
+- **iOS 17 scroll offset 读取**：新增 `ScrollViewOffsetReader`（从 `ScrollOffsetObserver` 复制简化，去掉 List/UICollectionViewCell 专属假设），作为周视图 iOS 17 兼容方案。命名已确定，不再摇摆
 
 这三项留到实施/验收阶段决定，不阻塞设计定稿。
 
