@@ -9,3 +9,4 @@ build/
 *.dSYM.zip
 *.dSYM
 backup/
+.superpowers/
