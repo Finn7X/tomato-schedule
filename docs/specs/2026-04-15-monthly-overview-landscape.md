@@ -1,7 +1,7 @@
 # 月度总览横屏周视图 — 设计规格文档
 
 > 日期：2026-04-15
-> 版本：revision-4（修 PreviewContext 编译 blocker、统一全文合同术语、iOS 17 scroll helper 路径明确化、示例代码对齐真实 app 入口）
+> 版本：revision-5（iPhone 13 横屏兼容：adaptive hourHeight + compact-height detent 分支 + 设备验收基线）
 > 状态：待定稿确认
 > 关联：扩展自 `docs/specs/2026-04-07-monthly-overview.md`；review 文档 `docs/reviews/2026-04-15-monthly-overview-landscape-review.md` + `docs/reviews/2026-04-15-monthly-overview-landscape-review-revision-2.md`
 
@@ -17,7 +17,7 @@
 
 - 横屏进入**周视图**：横轴 7 天、纵轴时间轴，与 Apple Calendar 周视图交互心智一致
 - 左右滑动切换相邻周，上下滚动查看更多时间段
-- 时间轴默认展示 9:00–21:00（约 6 小时可视 + 上下滚动），必要时自动扩展
+- 时间轴默认展示 9:00–21:00（通过自适应 `hourHeight` 确保 iPhone 13 等小屏设备也能一屏可见 ~5–6 小时 + 上下滚动），必要时自动扩展
 - 旋转回竖屏自动回到月视图，页面状态连续
 - 点击课时块弹出**信息卡片**（preview-only），与竖屏交互一致
 - **仅月度总览页面**支持横屏，App 其它页面保持竖屏
@@ -231,12 +231,30 @@ extension UIApplication {
 - **今日**：数字外套 teal 圆底（复用 `Color(red: 0.34, green: 0.77, blue: 0.72)`）
 - **周末**（六、日）：背景 `.secondary.opacity(0.04)` 色调区分
 
-### 4.4 时间轴列（sticky 左 48pt）
+### 4.4 时间轴列（sticky 左 48pt）+ 自适应 hourHeight
 
 - 整点标签右对齐，13pt caption，`.secondary`
-- 每小时高 **80pt**；默认 9–21 共 12h = 960pt 内容高度
-- 扩展后最大可能范围（6–23）= 17h = 1360pt 内容高度；`ScrollView` 自然承载，不需特殊处理
-- 半点细虚线分隔（可选，增强时间感知）
+- **`hourHeight` 不再固定 80pt**，改为根据设备 landscape 内容区高度自适应。目标是"无 sheet 时一屏至少可见 ~5–6 小时"：
+
+  ```
+  let contentAreaHeight = landscapeScreenHeight - topBarHeight(56) - headerRowHeight(40)
+  let targetVisibleHours: CGFloat = 6
+  let hourHeight = min(80, max(44, contentAreaHeight / targetVisibleHours))
+  ```
+
+  | 设备 | landscape 高度 | 内容区 | hourHeight | 可见时长 |
+  |---|---|---|---|---|
+  | iPhone 13 / 14 / 15 | 390pt | 294pt | **49pt** | ~6.0h |
+  | iPhone 15 Pro Max / 16 Plus | ~430pt | 334pt | **56pt** | ~6.0h |
+  | iPhone SE 3 | 375pt | 279pt | **47pt** | ~5.9h |
+
+  - 下限 44pt：30 分钟课时块 = 22pt，仍容纳学生姓名单行 + 时间行（10pt + 10pt + 2pt padding）
+  - 上限 80pt：仅在 >576pt 高度设备才触达（如未来大屏 iPhone 或 iPad landscape）
+  - `hourHeight` 在 `WeekTimelineView.onAppear` 时按 `GeometryReader` 读一次 `geometry.size.height` 计算，不随滚动重算
+
+- 默认 9–21 共 12h → iPhone 13 总内容高度 12 × 49 = 588pt，可滚动
+- 扩展后最大（6–23）= 17h → 17 × 49 = 833pt，`ScrollView` 自然承载
+- 半点细虚线分隔（可选，增强时间感知；hourHeight < 50pt 时建议关闭以减少视觉噪声）
 
 ### 4.5 内容网格（横向翻页 + 纵向滚动）
 
@@ -278,7 +296,7 @@ TabView(selection: $currentWeekStart) {
 - 块内文字：
   - 上行：学生姓名（11pt, semibold）
   - 下行：`09:30–10:30`（10pt, regular, `.secondary`）
-- 块高 < 28pt（约 ≤25 分钟课时）：单行仅显示学生姓名，缩 10pt 字号
+- 块高 < 28pt（在自适应 `hourHeight ≈ 49pt` 下对应 ≤34 分钟课时）：单行仅显示学生姓名，缩 10pt 字号
 - **重叠宽度规则**：车道数 = 该课时所属"冲突簇"内的最大并发车道数（laneCount）；该簇内**每个**块宽度均 = 列宽 / laneCount（统一除，不按各自并发数变化），避免边界对不齐
 - 最多 3 列并排；簇内同时并发 >3 时：lane 0/1/2 正常渲染，第 4 条起不单独渲染，改为在第 3 条块右下角叠加 "+N" 10pt 圆角气泡（点击第 3 条块弹出 `LessonInfoCard` 时顺带显示被合并的条目列表，见 §6.3）
 
@@ -365,15 +383,28 @@ iPhone landscape 属于 **compact vertical size class**。Apple 的 adaptive int
         lesson: ctx.lesson,
         overflowCompanions: ctx.overflowCompanions  // 来自 PreviewContext（§7.7）
     )
-    .presentationDetents([.fraction(0.35), .medium])
+    .presentationDetents(previewDetents)    // 按 size class 分支
     .presentationDragIndicator(.visible)
     .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.35)))
 }
+
+// detent 规则（WeekTimelineView 计算属性）：
+private var previewDetents: Set<PresentationDetent> {
+    // Apple: .medium 在 compact height 下 inactive，iPhone landscape 全部属于 compact height
+    // → compact height 用 .large 作为展开态
+    if vSize == .compact {
+        return [.fraction(0.35), .large]
+    } else {
+        return [.fraction(0.35), .medium]
+    }
+}
 ```
 
-- **`.fraction(0.35)`**：小高度模式，横屏下约 150pt 高，卡片停在底部，上方周网格仍能看见 6-7 小时时间轴，用户可对照 preview 与其它课时
-- **`.medium`**：用户上拉可展开到一半屏，看更详细信息
-- **`.presentationBackgroundInteraction(.enabled(...))`**：小态下允许与背景交互（滚动时间轴、横滑切周），系统日历 app 标准预览行为
+- **`.fraction(0.35)` 小态**（iPhone 13 landscape ≈ 136pt）：卡片停在底部，上方周网格仍保留 **~3 小时以上**时间轴可见（iPhone 13 实测：294 − 136 = 158pt，158 / 49pt = ~3.2h），足够对照当前课时与相邻时段
+- **展开态**：compact-height 设备用 `.large`（接近全屏），常规环境用 `.medium`（半屏）。`.large` 态下周网格被完全覆盖，卡片承担独立信息展示角色，用户下拉即可恢复小态或关闭
+- **`.presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.35)))`**：仅小态下允许与背景交互（滚动时间轴、横滑切周），展开态自动屏蔽背景交互，防止误触
+
+**为什么不用固定 `.height(200)` 替代 `.medium`**：iPad / 未来大屏设备上 `.medium` 依然有效（regular height），统一写死 `.height` 反而不自适应
 - **内容**：课程名 · 学生 · 完整时间 · 时长 · 备注 · 价格（若 > 0）；若 `cluster.overflowLessons.nonEmpty`（点击的是带 "+N" 角标的块），卡片下方增加 "同时段其它课时" 列表展示被合并项
 - **点击瞬间**：块 `scaleEffect(0.97)` 0.1s 微反馈
 - **关闭**：上滑外部 / 下拉把手 / 点击另一课时块（自动切换到新 lesson）
@@ -926,6 +957,14 @@ TomatoScheduleTests/
 - [ ] 跨年周顶栏含年份（"2025 年 12 月 29 日 – 2026 年 1 月 4 日"）
 - [ ] 现在指示线每分钟刷新位置
 - [ ] Dark Mode 下颜色对比度满足可读性
+
+**iPhone 13 设备基线验收**（横屏 390pt 高度 / iOS 17.x）：
+- [ ] 默认进入周视图时，一屏实际可见 ~5–6 小时（`hourHeight` 自适应至 ~49pt）
+- [ ] 课时块（30min）在自适应 `hourHeight` 下仍可读（学生名 + 时间行均可辨认）
+- [ ] preview sheet 小态（`.fraction(0.35)`）弹出后，上方仍保留 ≥3 小时时间轴可见
+- [ ] preview sheet 上拉展开态为 `.large`（非 `.medium`），内容完整显示（课程、学生、时间、备注、价格、overflow）
+- [ ] `.large` 态下背景交互自动屏蔽；下拉回 `.fraction(0.35)` 后背景交互恢复
+- [ ] `hourHeight < 50pt` 时半点虚线自动关闭（若已实现该可选项）
 
 ### 10.3 不做项
 
