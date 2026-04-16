@@ -1,8 +1,8 @@
 # 月度总览横屏周视图 — 设计规格文档
 
 > 日期：2026-04-15
-> 版本：revision-5（iPhone 13 横屏兼容：adaptive hourHeight + compact-height detent 分支 + 设备验收基线）
-> 状态：待定稿确认
+> 版本：final（经 6 轮 codex 评审定稿）
+> 状态：已定稿，实施计划见 `docs/plans/2026-04-16-monthly-overview-landscape.md`
 > 关联：扩展自 `docs/specs/2026-04-07-monthly-overview.md`；review 文档 `docs/reviews/2026-04-15-monthly-overview-landscape-review.md` + `docs/reviews/2026-04-15-monthly-overview-landscape-review-revision-2.md`
 
 ---
