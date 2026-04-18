@@ -29,6 +29,7 @@ struct WeekTimelineView: View {
             VStack(spacing: 0) {
                 topBar
                 WeekHeaderRow(weekStart: currentWeekStart)
+                WeekAllDayRow(weekStart: currentWeekStart)
                 weekPager
             }
             .onAppear {
@@ -55,15 +56,16 @@ struct WeekTimelineView: View {
     }
 
     private var topBar: some View {
-        HStack {
-            Button { onDismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.body.weight(.medium))
-            }
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
+            // Left: month label (red if any visible day is in current month)
+            Text(monthLabel)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(monthIsCurrent ? Color(.systemRed) : .primary)
+                .frame(width: 48 + 4, alignment: .leading)
+                .padding(.leading, 12)
+
             Spacer()
-            Text(DateHelper.weekRangeText(currentWeekStart))
-                .font(.body.weight(.semibold))
-            Spacer()
+
             Button {
                 let todayWeek = DateHelper.weekStart(for: Date())
                 recenterVisibleWeeks(around: todayWeek)
@@ -73,14 +75,32 @@ struct WeekTimelineView: View {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             } label: {
                 Text("今天")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(isTodayWeek ? .secondary : teal)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(isTodayWeek ? .secondary : Color(.systemRed))
             }
             .disabled(isTodayWeek)
             .accessibilityLabel("回到本周")
+            .padding(.trailing, 16)
         }
-        .padding(.horizontal, 16)
-        .frame(height: 56)
+        .frame(height: 36)
+        .padding(.top, 4)
+    }
+
+    /// Month label: show month of the majority of days in this week,
+    /// defaulting to month of the Monday.
+    private var monthLabel: String {
+        let cal = DateHelper.calendar
+        let month = cal.component(.month, from: currentWeekStart)
+        return "\(month)月"
+    }
+
+    private var monthIsCurrent: Bool {
+        let cal = DateHelper.calendar
+        let nowMonth = cal.component(.month, from: Date())
+        let nowYear = cal.component(.year, from: Date())
+        let weekMonth = cal.component(.month, from: currentWeekStart)
+        let weekYear = cal.component(.year, from: currentWeekStart)
+        return nowMonth == weekMonth && nowYear == weekYear
     }
 
     private var weekPager: some View {
@@ -115,7 +135,9 @@ struct WeekTimelineView: View {
     }
 
     private func computeHourHeight(landscapeHeight: CGFloat) {
-        let contentArea = landscapeHeight - 56 - 40
+        // topBar(40) + header(44) + allDayRow min(28) = 112
+        let headerTotal: CGFloat = 40 + 44 + 28
+        let contentArea = landscapeHeight - headerTotal
         hourHeight = min(80, max(44, contentArea / 6))
     }
 

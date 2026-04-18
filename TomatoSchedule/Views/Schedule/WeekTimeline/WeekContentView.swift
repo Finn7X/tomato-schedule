@@ -44,11 +44,11 @@ struct WeekContentView: View {
         VStack(spacing: 0) {
             ForEach(snapshot.timeRange.start..<snapshot.timeRange.end, id: \.self) { hour in
                 ZStack(alignment: .topLeading) {
-                    Text("\(hour)")
-                        .font(.system(size: 13))
+                    Text("\(hour):00")
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .frame(width: 44, alignment: .trailing)
-                        .offset(y: -7)
+                        .offset(y: -6)
 
                     Divider()
                         .opacity(0.25)
