@@ -27,10 +27,14 @@ struct WeekTimelineView: View {
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
-                topBar
-                WeekHeaderRow(weekStart: currentWeekStart)
+                // Header band: month label (left) + weekday header (right) on the same row
+                HStack(spacing: 0) {
+                    monthLabelColumn
+                    weekHeaderInline
+                }
                 WeekAllDayRow(weekStart: currentWeekStart)
                 weekPager
+                    .overlay(alignment: .topTrailing) { todayButtonOverlay }
             }
             .onAppear {
                 computeHourHeight(landscapeHeight: geo.size.height)
@@ -55,17 +59,32 @@ struct WeekTimelineView: View {
         }
     }
 
-    private var topBar: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 0) {
-            // Left: month label (red if any visible day is in current month)
+    /// Top-left column: stacks "4月" + "丙午马年" within the 48pt time-axis gutter
+    private var monthLabelColumn: some View {
+        VStack(alignment: .leading, spacing: 1) {
             Text(monthLabel)
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(monthIsCurrent ? Color(.systemRed) : .primary)
-                .frame(width: 48 + 4, alignment: .leading)
-                .padding(.leading, 12)
+            Text(LunarHelper.lunarYearLabel(for: currentWeekStart))
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(width: 48, alignment: .leading)
+        .padding(.leading, 6)
+        .frame(height: 44, alignment: .center)
+    }
 
-            Spacer()
+    /// Inline weekday header without its own left gutter (gutter is now monthLabelColumn).
+    private var weekHeaderInline: some View {
+        WeekHeaderRowInline(weekStart: currentWeekStart)
+    }
 
+    /// "今天" button: floating top-right, only when not on current week.
+    @ViewBuilder
+    private var todayButtonOverlay: some View {
+        if !isTodayWeek {
             Button {
                 let todayWeek = DateHelper.weekStart(for: Date())
                 recenterVisibleWeeks(around: todayWeek)
@@ -75,19 +94,20 @@ struct WeekTimelineView: View {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             } label: {
                 Text("今天")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(isTodayWeek ? .secondary : Color(.systemRed))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(Color(.systemRed).opacity(0.9)))
             }
-            .disabled(isTodayWeek)
+            .padding(.top, 8)
+            .padding(.trailing, 12)
             .accessibilityLabel("回到本周")
-            .padding(.trailing, 16)
+            .transition(.opacity.combined(with: .scale(scale: 0.9)))
         }
-        .frame(height: 36)
-        .padding(.top, 4)
     }
 
-    /// Month label: show month of the majority of days in this week,
-    /// defaulting to month of the Monday.
+    /// Month label: show month of the Monday for the visible week.
     private var monthLabel: String {
         let cal = DateHelper.calendar
         let month = cal.component(.month, from: currentWeekStart)
@@ -135,8 +155,8 @@ struct WeekTimelineView: View {
     }
 
     private func computeHourHeight(landscapeHeight: CGFloat) {
-        // topBar(40) + header(44) + allDayRow min(28) = 112
-        let headerTotal: CGFloat = 40 + 44 + 28
+        // header(44) + allDayRow min(28) = 72  (no separate top bar — month label is in column 1)
+        let headerTotal: CGFloat = 44 + 28
         let contentArea = landscapeHeight - headerTotal
         hourHeight = min(80, max(44, contentArea / 6))
     }

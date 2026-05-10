@@ -63,15 +63,9 @@ struct WeekContentView: View {
         let columnWidth = (geo.size.width - 48) / 7
         return HStack(spacing: 0) {
             Color.clear.frame(width: 48)
-            ForEach(Array(snapshot.days.enumerated()), id: \.element.id) { _, day in
+            ForEach(Array(snapshot.days.enumerated()), id: \.element.id) { offset, day in
                 ZStack(alignment: .topLeading) {
-                    if day.isToday {
-                        Rectangle()
-                            .fill(Color(red: 0.34, green: 0.77, blue: 0.72).opacity(0.04))
-                    } else if day.isWeekend {
-                        Rectangle()
-                            .fill(Color.secondary.opacity(0.04))
-                    }
+                    // No today column tint (Apple Calendar doesn't tint columns in week view)
 
                     ForEach(day.clusters, id: \.visibleBlocks.first?.id) { cluster in
                         ForEach(cluster.visibleBlocks) { block in
@@ -87,6 +81,14 @@ struct WeekContentView: View {
                     }
                 }
                 .frame(width: columnWidth)
+                .overlay(alignment: .leading) {
+                    // Vertical column divider (skip first column to avoid double border with gutter)
+                    if offset > 0 {
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.15))
+                            .frame(width: 0.5)
+                    }
+                }
             }
         }
     }
