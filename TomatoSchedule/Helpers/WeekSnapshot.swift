@@ -44,6 +44,14 @@ struct DayColumn: Identifiable {
     let isToday: Bool
     let isWeekend: Bool
     let clusters: [ConflictCluster]
+
+    /// Flat list of all lessons on this day (visible + overflow), sorted by start time.
+    /// Used by WeekAllDayRow to show daily summaries.
+    var allLessons: [Lesson] {
+        clusters
+            .flatMap { $0.visibleBlocks.map(\.lesson) + $0.overflowLessons }
+            .sorted { $0.startTime < $1.startTime }
+    }
 }
 
 // MARK: - WeekSnapshot (two-pass builder)

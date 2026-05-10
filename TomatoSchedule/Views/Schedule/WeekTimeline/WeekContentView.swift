@@ -8,26 +8,29 @@ struct WeekContentView: View {
     let onScrollPositionChanged: (Int) -> Void
     let onScrollRequestHandled: () -> Void
 
+    private var totalHours: Int { snapshot.timeRange.end - snapshot.timeRange.start }
+    private var contentHeight: CGFloat { CGFloat(totalHours) * hourHeight }
+
     var body: some View {
         GeometryReader { geo in
+            let columnWidth = max((geo.size.width - 48) / 7, 0)
             ScrollViewReader { reader in
                 ScrollView(.vertical, showsIndicators: true) {
                     ZStack(alignment: .topLeading) {
-                        VStack(spacing: 0) {
-                            ForEach(snapshot.timeRange.start...snapshot.timeRange.end, id: \.self) { hour in
-                                Color.clear
-                                    .frame(height: hourHeight)
-                                    .id(hour)
-                            }
-                        }
-
+                        // Single layer: hour grid (background, fills full width).
+                        // Each hour row carries .id(hour) so ScrollViewReader.scrollTo works
+                        // without a separate anchor VStack.
                         hourGridLayer
 
-                        dayColumnsLayer(geo: geo)
+                        // Day columns: 7 ZStacks each given an EXPLICIT height = contentHeight,
+                        // so blocks positioned via .offset(y:) land at the same y as the matching
+                        // hour grid divider in the layer above.
+                        dayColumnsLayer(columnWidth: columnWidth)
 
-                        nowIndicatorLayer(geo: geo)
+                        // Now indicator (red line) — overlay only; no contribution to layout.
+                        nowIndicatorLayer
                     }
-                    .frame(height: CGFloat(snapshot.timeRange.end - snapshot.timeRange.start) * hourHeight)
+                    .frame(width: geo.size.width, height: contentHeight)
                     .background(scrollOffsetTracker)
                 }
                 .onAppear {
@@ -39,6 +42,8 @@ struct WeekContentView: View {
             }
         }
     }
+
+    // MARK: - Hour Grid (with embedded scroll anchors)
 
     private var hourGridLayer: some View {
         VStack(spacing: 0) {
@@ -55,17 +60,22 @@ struct WeekContentView: View {
                         .padding(.leading, 48)
                 }
                 .frame(height: hourHeight)
+                .id(hour)
             }
         }
     }
 
-    private func dayColumnsLayer(geo: GeometryProxy) -> some View {
-        let columnWidth = (geo.size.width - 48) / 7
-        return HStack(spacing: 0) {
+    // MARK: - Day Columns (each with explicit full height)
+
+    private func dayColumnsLayer(columnWidth: CGFloat) -> some View {
+        HStack(spacing: 0) {
             Color.clear.frame(width: 48)
             ForEach(Array(snapshot.days.enumerated()), id: \.element.id) { offset, day in
                 ZStack(alignment: .topLeading) {
-                    // No today column tint (Apple Calendar doesn't tint columns in week view)
+                    // Spacer claims the column's full height (totalHours * hourHeight)
+                    // so .offset(y:) inside LessonBlockView aligns with the hour grid above.
+                    Color.clear
+                        .frame(width: columnWidth, height: contentHeight)
 
                     ForEach(day.clusters, id: \.visibleBlocks.first?.id) { cluster in
                         ForEach(cluster.visibleBlocks) { block in
@@ -80,9 +90,8 @@ struct WeekContentView: View {
                         }
                     }
                 }
-                .frame(width: columnWidth)
+                .frame(width: columnWidth, height: contentHeight)
                 .overlay(alignment: .leading) {
-                    // Vertical column divider (skip first column to avoid double border with gutter)
                     if offset > 0 {
                         Rectangle()
                             .fill(Color.secondary.opacity(0.15))
@@ -91,12 +100,14 @@ struct WeekContentView: View {
                 }
             }
         }
+        .frame(height: contentHeight)
     }
 
-    private func nowIndicatorLayer(geo: GeometryProxy) -> some View {
-        let todayIndex = snapshot.days.firstIndex(where: \.isToday)
-        return Group {
-            if todayIndex != nil {
+    // MARK: - Now Indicator
+
+    private var nowIndicatorLayer: some View {
+        Group {
+            if snapshot.days.contains(where: \.isToday) {
                 NowIndicatorView(
                     timeRangeStart: snapshot.timeRange.start,
                     hourHeight: hourHeight,
@@ -107,13 +118,18 @@ struct WeekContentView: View {
         }
     }
 
+    // MARK: - Scroll Offset Tracker (iOS 17 compat)
+
     private var scrollOffsetTracker: some View {
         ScrollViewOffsetReader { offsetY in
-            let hour = Int(offsetY / hourHeight) + snapshot.timeRange.start
-            onScrollPositionChanged(max(snapshot.timeRange.start, min(hour, snapshot.timeRange.end)))
+            let hour = Int((offsetY / hourHeight).rounded(.down)) + snapshot.timeRange.start
+            let clamped = max(snapshot.timeRange.start, min(hour, snapshot.timeRange.end - 1))
+            onScrollPositionChanged(clamped)
         }
         .frame(width: 0, height: 0)
     }
+
+    // MARK: - Scroll Restore
 
     private func applyScrollAnchor(reader: ScrollViewProxy) {
         guard let anchor = pendingScrollAnchor else { return }
@@ -123,7 +139,7 @@ struct WeekContentView: View {
         case .nowRounded:
             targetHour = DateHelper.calendar.component(.hour, from: Date())
         }
-        let clampedHour = max(snapshot.timeRange.start, min(targetHour, snapshot.timeRange.end))
+        let clampedHour = max(snapshot.timeRange.start, min(targetHour, snapshot.timeRange.end - 1))
         withAnimation(.easeOut(duration: 0.3)) {
             reader.scrollTo(clampedHour, anchor: .top)
         }

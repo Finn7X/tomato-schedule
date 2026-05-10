@@ -10,3 +10,4 @@ build/
 *.dSYM
 backup/
 .superpowers/
+.claude/

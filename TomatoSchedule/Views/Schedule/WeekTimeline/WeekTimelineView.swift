@@ -32,7 +32,7 @@ struct WeekTimelineView: View {
                     monthLabelColumn
                     weekHeaderInline
                 }
-                WeekAllDayRow(weekStart: currentWeekStart)
+                WeekAllDayRow(days: snapshotForWeek(currentWeekStart).days)
                 weekPager
                     .overlay(alignment: .topTrailing) { todayButtonOverlay }
             }
