@@ -14,18 +14,25 @@ struct WeekAllDayRow: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Left label column (aligns with time axis width)
+            // Left label column: text right-aligned at 44pt, 4pt gap → total 48pt (matches monthLabelColumn + hourGrid time axis)
             Text("全天")
-                .font(.system(size: 11))
+                .font(.system(size: 10))
                 .foregroundStyle(.secondary)
-                .frame(width: 48, alignment: .trailing)
-                .padding(.trailing, 4)
+                .frame(width: 44, alignment: .trailing)
+            Color.clear.frame(width: 4)
 
-            // 7 day columns (empty for now; structural placeholder)
-            ForEach(0..<7, id: \.self) { _ in
+            // 7 day columns (empty placeholder; vertical hairline dividers between)
+            ForEach(0..<7, id: \.self) { offset in
                 Rectangle()
                     .fill(Color.clear)
                     .frame(maxWidth: .infinity)
+                    .overlay(alignment: .leading) {
+                        if offset > 0 {
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.15))
+                                .frame(width: 0.5)
+                        }
+                    }
             }
         }
         .frame(minHeight: minHeight, maxHeight: maxHeight)
