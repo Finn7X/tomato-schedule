@@ -95,10 +95,13 @@ struct WeekAllDayRow: View {
     }
 
     private func lessonPill(_ lesson: Lesson) -> some View {
-        let color = PresetColors.color(for: lesson.course?.colorHex ?? "#94A3B8")
-        let primaryText = lesson.studentName.isEmpty
+        let trimmedName = lesson.studentName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let color: Color = trimmedName.isEmpty
+            ? PresetColors.color(for: lesson.course?.colorHex ?? "#94A3B8")
+            : StudentColors.color(for: trimmedName)
+        let primaryText = trimmedName.isEmpty
             ? (lesson.course?.name ?? "课时")
-            : lesson.studentName
+            : trimmedName
         return HStack(spacing: 4) {
             Circle()
                 .fill(color)

@@ -10,7 +10,13 @@ struct LessonBlockView: View {
 
     @State private var isPressed = false
 
+    /// Per-student color (matches portrait MonthCalendarView's StudentColors palette).
+    /// Falls back to course color when student name is empty.
     private var blockColor: Color {
+        let name = block.lesson.studentName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !name.isEmpty {
+            return StudentColors.color(for: name)
+        }
         if let hex = block.lesson.course?.colorHex {
             return PresetColors.color(for: hex)
         }
@@ -18,7 +24,7 @@ struct LessonBlockView: View {
     }
 
     private var fillOpacity: Double {
-        block.lesson.isCompleted ? 0.08 : 0.15
+        block.lesson.isCompleted ? 0.10 : 0.18
     }
 
     var body: some View {
@@ -28,43 +34,48 @@ struct LessonBlockView: View {
         let xOffset = width * CGFloat(block.lane)
 
         ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 4)
                 .fill(blockColor.opacity(fillOpacity))
 
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(blockColor)
-                .frame(width: 4)
-                .padding(.vertical, 1)
+                .frame(width: 3)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(block.lesson.studentName.isEmpty ? "无学生" : block.lesson.studentName)
-                    .font(.system(size: height < 28 ? 10 : 11, weight: .semibold))
+                    .font(.system(size: height < 30 ? 10 : 11, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .foregroundStyle(blockColor)
 
-                if height >= 28 {
+                if height >= 30 {
                     Text(block.lesson.timeRangeText)
                         .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(blockColor.opacity(0.72))
                         .lineLimit(1)
                 }
             }
-            .padding(.leading, 8)
+            .padding(.leading, 7)
             .padding(.trailing, 4)
-            .padding(.vertical, 2)
+            .padding(.top, 2)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .fixedSize(horizontal: false, vertical: false)
 
             if block.clipsLeading {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 8))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .foregroundStyle(blockColor.opacity(0.7))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.trailing, 2)
+                    .padding(.top, 1)
             }
             if block.clipsTrailing {
                 Image(systemName: "arrow.down")
                     .font(.system(size: 8))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, 2)
+                    .foregroundStyle(blockColor.opacity(0.7))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .padding(.trailing, 2)
+                    .padding(.bottom, 1)
             }
 
             if !cluster.overflowLessons.isEmpty && block.lane == cluster.laneCount - 1 {
@@ -73,15 +84,17 @@ struct LessonBlockView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
-                    .background(Capsule().fill(blockColor.opacity(0.8)))
+                    .background(Capsule().fill(blockColor.opacity(0.85)))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                     .padding(3)
             }
         }
-        .frame(width: width - 2, height: height)
+        .frame(width: width - 2, height: height, alignment: .topLeading)
+        .clipped()  // ⬅︎ ensures content (text, arrows, badge) NEVER overflows the block frame
         .offset(x: xOffset + 1, y: yOffset)
         .scaleEffect(isPressed ? 0.97 : 1.0)
         .animation(.easeOut(duration: 0.1), value: isPressed)
+        .contentShape(Rectangle())  // hit area = the visible block, not overflow zone
         .onTapGesture {
             isPressed = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { isPressed = false }

@@ -13,6 +13,7 @@ struct WeekTimelineView: View {
     @State private var previewingContext: PreviewContext?
     @State private var visibleWeekStarts: [Date] = []
     @State private var hourHeight: CGFloat = 60
+    @State private var trackedScrollOffset: CGFloat = 0
 
     private let teal = Color(red: 0.34, green: 0.77, blue: 0.72)
 
@@ -33,8 +34,28 @@ struct WeekTimelineView: View {
                     weekHeaderInline
                 }
                 WeekAllDayRow(days: snapshotForWeek(currentWeekStart).days)
-                weekPager
-                    .overlay(alignment: .topTrailing) { todayButtonOverlay }
+                ZStack(alignment: .topLeading) {
+                    weekPager
+
+                    // Sticky time axis: rendered ABOVE the TabView, on the left 48pt.
+                    // Doesn't slide horizontally with weeks; follows active week's
+                    // vertical scroll via .offset(y: -trackedScrollOffset).
+                    TimeAxisColumn(
+                        timeRange: snapshotForWeek(currentWeekStart).timeRange,
+                        hourHeight: hourHeight
+                    )
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .offset(y: -trackedScrollOffset)
+                    .frame(width: 48, alignment: .topLeading)
+                    .background(
+                        Color(.systemBackground)
+                            .frame(maxHeight: .infinity)
+                    )
+                    .clipped()
+                    .allowsHitTesting(false)
+                }
+                .clipped()
+                .overlay(alignment: .topTrailing) { todayButtonOverlay }
             }
             .onAppear {
                 computeHourHeight(landscapeHeight: geo.size.height)
@@ -135,6 +156,12 @@ struct WeekTimelineView: View {
                         ? pendingScrollRequest?.anchor : nil,
                     onScrollPositionChanged: { hour in
                         scrollAnchorByWeek[weekStart] = .hour(hour)
+                    },
+                    onScrollOffsetChanged: { offsetY in
+                        // Only the active week's scroll drives the sticky time axis
+                        if weekStart == currentWeekStart {
+                            trackedScrollOffset = max(0, offsetY)
+                        }
                     },
                     onScrollRequestHandled: { pendingScrollRequest = nil }
                 )

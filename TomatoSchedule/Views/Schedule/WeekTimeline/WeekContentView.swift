@@ -1,11 +1,15 @@
 import SwiftUI
 
+/// Renders ONE week's day columns + hour gridlines + now indicator.
+/// Time axis labels are NOT rendered here — they live in TimeAxisColumn at the
+/// WeekTimelineView level so horizontal week swipes do not slide the labels.
 struct WeekContentView: View {
     let snapshot: WeekSnapshot
     let hourHeight: CGFloat
     let onBlockTap: (PreviewContext) -> Void
     let pendingScrollAnchor: ScrollAnchor?
     let onScrollPositionChanged: (Int) -> Void
+    let onScrollOffsetChanged: (CGFloat) -> Void
     let onScrollRequestHandled: () -> Void
 
     private var totalHours: Int { snapshot.timeRange.end - snapshot.timeRange.start }
@@ -17,17 +21,12 @@ struct WeekContentView: View {
             ScrollViewReader { reader in
                 ScrollView(.vertical, showsIndicators: true) {
                     ZStack(alignment: .topLeading) {
-                        // Single layer: hour grid (background, fills full width).
-                        // Each hour row carries .id(hour) so ScrollViewReader.scrollTo works
-                        // without a separate anchor VStack.
+                        // Hour gridlines (background) — left 48pt is reserved for the
+                        // sticky TimeAxisColumn rendered by the parent view.
                         hourGridLayer
 
-                        // Day columns: 7 ZStacks each given an EXPLICIT height = contentHeight,
-                        // so blocks positioned via .offset(y:) land at the same y as the matching
-                        // hour grid divider in the layer above.
                         dayColumnsLayer(columnWidth: columnWidth)
 
-                        // Now indicator (red line) — overlay only; no contribution to layout.
                         nowIndicatorLayer
                     }
                     .frame(width: geo.size.width, height: contentHeight)
@@ -43,18 +42,12 @@ struct WeekContentView: View {
         }
     }
 
-    // MARK: - Hour Grid (with embedded scroll anchors)
+    // MARK: - Hour Gridlines (no labels)
 
     private var hourGridLayer: some View {
         VStack(spacing: 0) {
             ForEach(snapshot.timeRange.start..<snapshot.timeRange.end, id: \.self) { hour in
                 ZStack(alignment: .topLeading) {
-                    Text("\(hour):00")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, alignment: .trailing)
-                        .offset(y: -6)
-
                     Divider()
                         .opacity(0.25)
                         .padding(.leading, 48)
@@ -65,15 +58,13 @@ struct WeekContentView: View {
         }
     }
 
-    // MARK: - Day Columns (each with explicit full height)
+    // MARK: - Day Columns
 
     private func dayColumnsLayer(columnWidth: CGFloat) -> some View {
         HStack(spacing: 0) {
             Color.clear.frame(width: 48)
             ForEach(Array(snapshot.days.enumerated()), id: \.element.id) { offset, day in
                 ZStack(alignment: .topLeading) {
-                    // Spacer claims the column's full height (totalHours * hourHeight)
-                    // so .offset(y:) inside LessonBlockView aligns with the hour grid above.
                     Color.clear
                         .frame(width: columnWidth, height: contentHeight)
 
@@ -119,9 +110,12 @@ struct WeekContentView: View {
     }
 
     // MARK: - Scroll Offset Tracker (iOS 17 compat)
+    // Reports both the integer hour anchor (for cache) AND the raw offsetY
+    // (for parent's TimeAxisColumn sync).
 
     private var scrollOffsetTracker: some View {
         ScrollViewOffsetReader { offsetY in
+            onScrollOffsetChanged(offsetY)
             let hour = Int((offsetY / hourHeight).rounded(.down)) + snapshot.timeRange.start
             let clamped = max(snapshot.timeRange.start, min(hour, snapshot.timeRange.end - 1))
             onScrollPositionChanged(clamped)
