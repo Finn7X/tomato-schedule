@@ -4,54 +4,37 @@ import SwiftUI
 ///
 /// Shows a compact pill per lesson (Apple-Calendar-style capsule) so the user
 /// can see what's scheduled on each day without scrolling the timed grid.
-///
-/// Adaptive height:
-/// - Empty week (no lessons on any day) → minHeight (just the "全天" label band)
-/// - Has lessons → expands to fit up to `maxVisiblePillsPerDay` rows, capped at maxHeight
-/// - When a day has more lessons than maxVisiblePillsPerDay, shows "+N" overflow indicator
 struct WeekAllDayRow: View {
     let days: [DayColumn]
 
-    private let labelGutterWidth: CGFloat = 48
-    private let labelInnerWidth: CGFloat = 44
-    private let labelGap: CGFloat = 4
-    private let pillHeight: CGFloat = 20
-    private let pillSpacing: CGFloat = 3
-    private let columnPaddingHorizontal: CGFloat = 4
-    private let columnPaddingVertical: CGFloat = 6
-    private let maxVisiblePillsPerDay: Int = 3
-    private let minHeight: CGFloat = 28
-    private let maxHeight: CGFloat = 110
-
-    private var rowHeight: CGFloat {
-        // Find the max number of "rows" needed across all days, capped at maxVisiblePillsPerDay+1 (for +N indicator).
-        var maxRows = 0
-        for day in days {
-            let count = day.allLessons.count
-            if count == 0 { continue }
-            let visible = min(count, maxVisiblePillsPerDay)
-            let needsOverflow = count > maxVisiblePillsPerDay
-            maxRows = max(maxRows, visible + (needsOverflow ? 1 : 0))
-        }
-        if maxRows == 0 { return minHeight }
-        let pills = CGFloat(maxRows) * pillHeight
-        let gaps = CGFloat(maxRows - 1) * pillSpacing
-        let padding = columnPaddingVertical * 2
-        return min(maxHeight, max(minHeight, pills + gaps + padding))
-    }
-
     var body: some View {
         HStack(spacing: 0) {
-            // Left "全天" label (right-aligned in 44pt + 4pt gap = 48pt total, matches monthLabelColumn / time axis)
+            // Sticky left label (mirrors the time-axis 48pt gutter)
             Text("全天")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
-                .frame(width: labelInnerWidth, alignment: .trailing)
+                .frame(width: 44, alignment: .trailing)
                 .frame(maxHeight: .infinity, alignment: .top)
-                .padding(.top, columnPaddingVertical + 1)
-            Color.clear.frame(width: labelGap)
+                .padding(.top, WeekAllDayMetrics.columnPaddingVertical + 1)
+            Color.clear.frame(width: 4)
 
             // 7 day columns of pills
+            WeekAllDayPillsInline(days: days)
+        }
+        .frame(height: WeekAllDayMetrics.height(for: days))
+        .background(Color(.systemBackground))
+        .overlay(alignment: .bottom) { Divider().opacity(0.4) }
+    }
+}
+
+/// Just the 7-column pills area (no left "全天" label and no left gutter).
+/// Used inside the TabView page so the pills slide horizontally with the day grid,
+/// while the parent renders the "全天" label as a sticky non-sliding element.
+struct WeekAllDayPillsInline: View {
+    let days: [DayColumn]
+
+    var body: some View {
+        HStack(spacing: 0) {
             ForEach(Array(days.enumerated()), id: \.element.id) { offset, day in
                 dayColumn(day: day)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -64,19 +47,13 @@ struct WeekAllDayRow: View {
                     }
             }
         }
-        .frame(height: rowHeight)
-        .background(Color(.systemBackground))
-        .overlay(alignment: .bottom) {
-            Divider().opacity(0.4)
-        }
-        .animation(.easeInOut(duration: 0.18), value: rowHeight)
     }
 
     private func dayColumn(day: DayColumn) -> some View {
         let lessons = day.allLessons
-        let visible = lessons.prefix(maxVisiblePillsPerDay)
-        let overflow = max(0, lessons.count - maxVisiblePillsPerDay)
-        return VStack(alignment: .leading, spacing: pillSpacing) {
+        let visible = lessons.prefix(WeekAllDayMetrics.maxVisiblePillsPerDay)
+        let overflow = max(0, lessons.count - WeekAllDayMetrics.maxVisiblePillsPerDay)
+        return VStack(alignment: .leading, spacing: WeekAllDayMetrics.pillSpacing) {
             ForEach(Array(visible), id: \.id) { lesson in
                 lessonPill(lesson)
             }
@@ -85,13 +62,13 @@ struct WeekAllDayRow: View {
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: pillHeight)
+                    .frame(height: WeekAllDayMetrics.pillHeight)
                     .padding(.leading, 4)
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, columnPaddingHorizontal)
-        .padding(.vertical, columnPaddingVertical)
+        .padding(.horizontal, WeekAllDayMetrics.columnPaddingHorizontal)
+        .padding(.vertical, WeekAllDayMetrics.columnPaddingVertical)
     }
 
     private func lessonPill(_ lesson: Lesson) -> some View {
@@ -114,11 +91,44 @@ struct WeekAllDayRow: View {
         }
         .padding(.leading, 5)
         .padding(.trailing, 8)
-        .frame(height: pillHeight)
+        .frame(height: WeekAllDayMetrics.pillHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            Capsule(style: .continuous)
-                .fill(color.opacity(0.15))
-        )
+        .background(Capsule(style: .continuous).fill(color.opacity(0.15)))
+    }
+}
+
+/// Shared metric helpers so the sticky left "全天" label and the per-page pill
+/// content always agree on heights (used by WeekTimelineView to compute a unified
+/// row height across the visible weeks).
+enum WeekAllDayMetrics {
+    static let pillHeight: CGFloat = 20
+    static let pillSpacing: CGFloat = 3
+    static let columnPaddingHorizontal: CGFloat = 4
+    static let columnPaddingVertical: CGFloat = 6
+    static let maxVisiblePillsPerDay: Int = 3
+    static let minHeight: CGFloat = 28
+    static let maxHeight: CGFloat = 110
+
+    /// Height needed for ONE week's pill content.
+    static func height(for days: [DayColumn]) -> CGFloat {
+        var maxRows = 0
+        for day in days {
+            let count = day.allLessons.count
+            if count == 0 { continue }
+            let visible = min(count, maxVisiblePillsPerDay)
+            let needsOverflow = count > maxVisiblePillsPerDay
+            maxRows = max(maxRows, visible + (needsOverflow ? 1 : 0))
+        }
+        if maxRows == 0 { return minHeight }
+        let pills = CGFloat(maxRows) * pillHeight
+        let gaps = CGFloat(maxRows - 1) * pillSpacing
+        let padding = columnPaddingVertical * 2
+        return min(maxHeight, max(minHeight, pills + gaps + padding))
+    }
+
+    /// Unified height = max(per-week heights) across the visible weeks so the
+    /// horizontal pager swipe doesn't shift the day grid vertically.
+    static func unifiedHeight(across weekDays: [[DayColumn]]) -> CGFloat {
+        weekDays.map(height(for:)).max() ?? minHeight
     }
 }

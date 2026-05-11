@@ -15,8 +15,6 @@ struct WeekTimelineView: View {
     @State private var hourHeight: CGFloat = 60
     @State private var trackedScrollOffset: CGFloat = 0
 
-    private let teal = Color(red: 0.34, green: 0.77, blue: 0.72)
-
     init(focusDate: Binding<Date>, lessons: [Lesson], onDismiss: @escaping () -> Void) {
         self._focusDate = focusDate
         self.lessons = lessons
@@ -25,37 +23,36 @@ struct WeekTimelineView: View {
         self._currentWeekStart = State(initialValue: ws)
     }
 
+    private var unifiedAllDayHeight: CGFloat {
+        WeekAllDayMetrics.unifiedHeight(
+            across: visibleWeekStarts.map { snapshotForWeek($0).days }
+        )
+    }
+
+    private var unifiedTimeRange: (start: Int, end: Int) {
+        guard !visibleWeekStarts.isEmpty else {
+            return snapshotForWeek(currentWeekStart).timeRange
+        }
+        var start = Int.max
+        var end = Int.min
+        for ws in visibleWeekStarts {
+            let r = snapshotForWeek(ws).timeRange
+            start = min(start, r.start)
+            end = max(end, r.end)
+        }
+        return (start == Int.max ? 9 : start, end == Int.min ? 24 : end)
+    }
+
     var body: some View {
         GeometryReader { geo in
-            VStack(spacing: 0) {
-                // Header band: month label (left) + weekday header (right) on the same row
+            ZStack(alignment: .topTrailing) {
                 HStack(spacing: 0) {
-                    monthLabelColumn
-                    weekHeaderInline
-                }
-                WeekAllDayRow(days: snapshotForWeek(currentWeekStart).days)
-                ZStack(alignment: .topLeading) {
-                    weekPager
-
-                    // Sticky time axis: rendered ABOVE the TabView, on the left 48pt.
-                    // Doesn't slide horizontally with weeks; follows active week's
-                    // vertical scroll via .offset(y: -trackedScrollOffset).
-                    TimeAxisColumn(
-                        timeRange: snapshotForWeek(currentWeekStart).timeRange,
-                        hourHeight: hourHeight
-                    )
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .offset(y: -trackedScrollOffset)
-                    .frame(width: 48, alignment: .topLeading)
-                    .background(
-                        Color(.systemBackground)
-                            .frame(maxHeight: .infinity)
-                    )
-                    .clipped()
-                    .allowsHitTesting(false)
+                    stickyLeftColumn
+                    rightPager(geoWidth: geo.size.width - 48)
                 }
                 .clipped()
-                .overlay(alignment: .topTrailing) { todayButtonOverlay }
+
+                todayButtonOverlay
             }
             .onAppear {
                 computeHourHeight(landscapeHeight: geo.size.height)
@@ -80,7 +77,35 @@ struct WeekTimelineView: View {
         }
     }
 
-    /// Top-left column: stacks "4月" + "丙午马年" within the 48pt time-axis gutter
+    // MARK: - Sticky Left Column (48pt)
+    //
+    // Top: monthLabelColumn (44pt)  |  matches WeekHeaderRowInline height
+    // Middle: "全天" label, height = unifiedAllDayHeight
+    // Bottom: TimeAxisColumn, offset(-trackedScrollOffset) follows active week's vertical scroll
+
+    private var stickyLeftColumn: some View {
+        VStack(spacing: 0) {
+            monthLabelColumn
+
+            allDayLabelCell
+                .frame(height: unifiedAllDayHeight)
+
+            // Time axis area — vertically follows the active week's scroll.
+            // Wrap in a clipping container so the time axis doesn't bleed up into
+            // the headers above when the user is scrolled far down.
+            GeometryReader { _ in
+                TimeAxisColumn(timeRange: unifiedTimeRange, hourHeight: hourHeight)
+                    .offset(y: -trackedScrollOffset)
+                    .frame(maxHeight: .infinity, alignment: .top)
+            }
+            .clipped()
+            .frame(maxHeight: .infinity)
+        }
+        .frame(width: 48)
+        .background(Color(.systemBackground))
+        .allowsHitTesting(false)
+    }
+
     private var monthLabelColumn: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(monthLabel)
@@ -97,12 +122,68 @@ struct WeekTimelineView: View {
         .frame(height: 44, alignment: .center)
     }
 
-    /// Inline weekday header without its own left gutter (gutter is now monthLabelColumn).
-    private var weekHeaderInline: some View {
-        WeekHeaderRowInline(weekStart: currentWeekStart)
+    private var allDayLabelCell: some View {
+        VStack {
+            Text("全天")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 4)
+                .padding(.top, WeekAllDayMetrics.columnPaddingVertical + 1)
+            Spacer(minLength: 0)
+        }
+        .overlay(alignment: .bottom) { Divider().opacity(0.4) }
     }
 
-    /// "今天" button: floating top-right, only when not on current week.
+    // MARK: - Right Pager
+    //
+    // Each TabView page contains:
+    //   VStack {
+    //     WeekHeaderRowInline       — 7-day header (slides horizontally with page)
+    //     WeekAllDayPillsInline     — 7-day pills (unified height, slides with page)
+    //     WeekContentView           — vertically scrollable day grid
+    //   }
+    // The result matches Apple Calendar's behavior where headers/pills/grid
+    // smoothly slide together while the left time axis stays put.
+
+    private func rightPager(geoWidth: CGFloat) -> some View {
+        TabView(selection: $currentWeekStart) {
+            ForEach(visibleWeekStarts, id: \.self) { weekStart in
+                let snap = snapshotForWeek(weekStart)
+                VStack(spacing: 0) {
+                    WeekHeaderRowInline(weekStart: weekStart)
+
+                    WeekAllDayPillsInline(days: snap.days)
+                        .frame(height: unifiedAllDayHeight)
+                        .background(Color(.systemBackground))
+                        .overlay(alignment: .bottom) { Divider().opacity(0.4) }
+
+                    WeekContentView(
+                        snapshot: snap,
+                        hourHeight: hourHeight,
+                        onBlockTap: { ctx in previewingContext = ctx },
+                        pendingScrollAnchor: pendingScrollRequest?.week == weekStart
+                            ? pendingScrollRequest?.anchor : nil,
+                        onScrollPositionChanged: { hour in
+                            scrollAnchorByWeek[weekStart] = .hour(hour)
+                        },
+                        onScrollOffsetChanged: { offsetY in
+                            if weekStart == currentWeekStart {
+                                trackedScrollOffset = max(0, offsetY)
+                            }
+                        },
+                        onScrollRequestHandled: { pendingScrollRequest = nil }
+                    )
+                }
+                .tag(weekStart)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(width: geoWidth)
+    }
+
+    // MARK: - Today Button Overlay
+
     @ViewBuilder
     private var todayButtonOverlay: some View {
         if !isTodayWeek {
@@ -128,7 +209,8 @@ struct WeekTimelineView: View {
         }
     }
 
-    /// Month label: show month of the Monday for the visible week.
+    // MARK: - Computed labels
+
     private var monthLabel: String {
         let cal = DateHelper.calendar
         let month = cal.component(.month, from: currentWeekStart)
@@ -144,33 +226,6 @@ struct WeekTimelineView: View {
         return nowMonth == weekMonth && nowYear == weekYear
     }
 
-    private var weekPager: some View {
-        TabView(selection: $currentWeekStart) {
-            ForEach(visibleWeekStarts, id: \.self) { weekStart in
-                let snap = snapshotForWeek(weekStart)
-                WeekContentView(
-                    snapshot: snap,
-                    hourHeight: hourHeight,
-                    onBlockTap: { ctx in previewingContext = ctx },
-                    pendingScrollAnchor: pendingScrollRequest?.week == weekStart
-                        ? pendingScrollRequest?.anchor : nil,
-                    onScrollPositionChanged: { hour in
-                        scrollAnchorByWeek[weekStart] = .hour(hour)
-                    },
-                    onScrollOffsetChanged: { offsetY in
-                        // Only the active week's scroll drives the sticky time axis
-                        if weekStart == currentWeekStart {
-                            trackedScrollOffset = max(0, offsetY)
-                        }
-                    },
-                    onScrollRequestHandled: { pendingScrollRequest = nil }
-                )
-                .tag(weekStart)
-            }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-    }
-
     private var isTodayWeek: Bool {
         DateHelper.weekStart(for: Date()) == currentWeekStart
     }
@@ -182,7 +237,7 @@ struct WeekTimelineView: View {
     }
 
     private func computeHourHeight(landscapeHeight: CGFloat) {
-        // header(44) + allDayRow min(28) = 72  (no separate top bar — month label is in column 1)
+        // header(44) + allDay(min 28) = 72 reserved.
         let headerTotal: CGFloat = 44 + 28
         let contentArea = landscapeHeight - headerTotal
         hourHeight = min(80, max(44, contentArea / 6))

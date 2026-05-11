@@ -73,9 +73,13 @@ struct WeekSnapshot {
             lessonsByDay[offset] = lessons.filter { DateHelper.isSameDay($0.date, startOfDay) }
         }
 
-        // Pass 1: compute global time range across all 7 days
+        // Pass 1: compute global time range across all 7 days.
+        // Default end is 24 so the timeline always covers a full day (Apple Calendar
+        // shows 0–23 unconditionally). This avoids a large "empty buffer" below the
+        // last labeled hour when the user scrolls down — the extra hours (21, 22, 23)
+        // are simply unscheduled rows with labels.
         var earliest = 9
-        var latest = 21
+        var latest = 24
         for dayLessons in lessonsByDay {
             for lesson in dayLessons {
                 let h = cal.component(.hour, from: lesson.startTime)

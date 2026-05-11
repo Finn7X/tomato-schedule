@@ -10,7 +10,9 @@ final class WeekSnapshotTests: XCTestCase {
         let snap = WeekSnapshot.build(weekStart: monday, lessons: [])
         XCTAssertEqual(snap.days.count, 7)
         XCTAssertEqual(snap.timeRange.start, 9)
-        XCTAssertEqual(snap.timeRange.end, 21)
+        // Default end is 24 — timeline always covers a full day so scrolling never
+        // hits a large empty buffer at the bottom (matches Apple Calendar's 0–23).
+        XCTAssertEqual(snap.timeRange.end, 24)
     }
 
     func testBuildExpandsRangeForEarlyLesson() {
@@ -26,7 +28,10 @@ final class WeekSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.timeRange.start, 7)
     }
 
-    func testBuildExpandsRangeForLateLesson() {
+    func testBuildKeepsDefaultEndForLateLesson() {
+        // With default end = 24, a normal late lesson at 21:30-22:30 stays within
+        // the default range without further extension (the timeline already covers
+        // the full day).
         let monday = DateHelper.weekStart(for: Date())
         let lesson = Lesson(
             course: stubCourse,
@@ -36,7 +41,7 @@ final class WeekSnapshotTests: XCTestCase {
             endTime: cal.date(bySettingHour: 22, minute: 30, second: 0, of: monday)!
         )
         let snap = WeekSnapshot.build(weekStart: monday, lessons: [lesson])
-        XCTAssertEqual(snap.timeRange.end, 23)
+        XCTAssertEqual(snap.timeRange.end, 24)
     }
 
     func testDayColumnIsWeekendFlags() {
