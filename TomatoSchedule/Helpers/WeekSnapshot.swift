@@ -58,7 +58,18 @@ struct WeekSnapshot {
     let days: [DayColumn]
     let timeRange: (start: Int, end: Int)
 
-    static func build(weekStart: Date, lessons: [Lesson], maxLanes: Int = 3) -> WeekSnapshot {
+    /// Build a week snapshot.
+    /// - Parameter forcedTimeRange: When non-nil, use this range as-is instead of
+    ///   computing per-week earliest/latest. The caller passes the *global* time
+    ///   range across all visible weeks so that every snapshot uses the same
+    ///   coordinate system and block y-positions align 1:1 with the sticky
+    ///   TimeAxisColumn rendered above the pager.
+    static func build(
+        weekStart: Date,
+        lessons: [Lesson],
+        maxLanes: Int = 3,
+        forcedTimeRange: (start: Int, end: Int)? = nil
+    ) -> WeekSnapshot {
         let cal = DateHelper.calendar
         let today = cal.startOfDay(for: Date())
 
@@ -70,25 +81,30 @@ struct WeekSnapshot {
             lessonsByDay[offset] = lessons.filter { DateHelper.isSameDay($0.date, startOfDay) }
         }
 
-        // Pass 1: compute global time range across all 7 days.
-        // Default end is 24 so the timeline always covers a full day (Apple Calendar
-        // shows 0–23 unconditionally). This avoids a large "empty buffer" below the
-        // last labeled hour when the user scrolls down — the extra hours (21, 22, 23)
-        // are simply unscheduled rows with labels.
-        var earliest = 9
-        var latest = 24
-        for dayLessons in lessonsByDay {
-            for lesson in dayLessons {
-                let h = cal.component(.hour, from: lesson.startTime)
-                if h < earliest { earliest = h }
-                let eComps = cal.dateComponents([.hour, .minute], from: lesson.endTime)
-                let endHour = (eComps.minute ?? 0) > 0
-                    ? (eComps.hour ?? 0) + 1
-                    : (eComps.hour ?? 0)
-                if endHour > latest { latest = min(endHour, 24) }
+        // Pass 1: time range.
+        // If the caller forced a global range (used by WeekTimelineView so all visible
+        // weeks share the same coordinate system as the sticky TimeAxisColumn), use it
+        // directly. Otherwise compute per-week earliest/latest with a full-day default
+        // end so the timeline always covers a normal day.
+        let finalRange: (start: Int, end: Int)
+        if let forced = forcedTimeRange {
+            finalRange = forced
+        } else {
+            var earliest = 9
+            var latest = 24
+            for dayLessons in lessonsByDay {
+                for lesson in dayLessons {
+                    let h = cal.component(.hour, from: lesson.startTime)
+                    if h < earliest { earliest = h }
+                    let eComps = cal.dateComponents([.hour, .minute], from: lesson.endTime)
+                    let endHour = (eComps.minute ?? 0) > 0
+                        ? (eComps.hour ?? 0) + 1
+                        : (eComps.hour ?? 0)
+                    if endHour > latest { latest = min(endHour, 24) }
+                }
             }
+            finalRange = (earliest, latest)
         }
-        let finalRange = (earliest, latest)
 
         // Pass 2: build DayColumns using the globally-consistent time range
         let days: [DayColumn] = (0..<7).map { offset in

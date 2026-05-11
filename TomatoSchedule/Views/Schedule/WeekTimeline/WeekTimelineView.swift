@@ -20,7 +20,7 @@ struct WeekTimelineView: View {
     // which during scroll (60fps trackedScrollOffset writes) caused thousands of array
     // allocations / sorts per second across 5 visible weeks × 7 days each.
     @State private var unifiedAllDayHeight: CGFloat = WeekAllDayMetrics.minHeight
-    @State private var unifiedTimeRange: (start: Int, end: Int) = (9, 24)
+    @State private var globalTimeRange: (start: Int, end: Int) = (9, 24)
 
     init(focusDate: Binding<Date>, lessons: [Lesson], onDismiss: @escaping () -> Void) {
         self._focusDate = focusDate
@@ -32,22 +32,45 @@ struct WeekTimelineView: View {
 
     /// Recompute the cached unified metrics. Call only when the underlying data
     /// (visibleWeekStarts or the lesson list) changes — NOT on every render.
+    ///
+    /// IMPORTANT ordering:
+    /// 1. First scan all lessons → compute `globalTimeRange` (the same range used
+    ///    for every snapshot, so block y-positions align 1:1 with the sticky
+    ///    TimeAxisColumn).
+    /// 2. Invalidate snapshotCache because the new global range may differ from
+    ///    what previously-cached snapshots were built with.
+    /// 3. Rebuild snapshots for visible weeks using the new global range and
+    ///    derive the unified all-day height.
     private func recomputeUnifiedMetrics() {
+        let newRange = scanGlobalTimeRange()
+        if newRange != globalTimeRange {
+            globalTimeRange = newRange
+            snapshotCache.removeAll()
+        }
+
         let perWeekDays = visibleWeekStarts.map { snapshotForWeek($0).days }
         unifiedAllDayHeight = WeekAllDayMetrics.unifiedHeight(across: perWeekDays)
+    }
 
-        if visibleWeekStarts.isEmpty {
-            unifiedTimeRange = snapshotForWeek(currentWeekStart).timeRange
-            return
+    /// One-pass scan over ALL lessons to find the earliest start hour and latest
+    /// end hour. Default end stays at 24 (full-day timeline). Default start stays
+    /// at 9 and extends down only if there are early-morning lessons. The result
+    /// is the time range every snapshot will use, so the sticky TimeAxisColumn
+    /// and per-week day grids share one coordinate system.
+    private func scanGlobalTimeRange() -> (start: Int, end: Int) {
+        let cal = DateHelper.calendar
+        var earliest = 9
+        var latest = 24
+        for lesson in lessons {
+            let h = cal.component(.hour, from: lesson.startTime)
+            if h < earliest { earliest = h }
+            let eComps = cal.dateComponents([.hour, .minute], from: lesson.endTime)
+            let endHour = (eComps.minute ?? 0) > 0
+                ? (eComps.hour ?? 0) + 1
+                : (eComps.hour ?? 0)
+            if endHour > latest { latest = min(endHour, 24) }
         }
-        var start = Int.max
-        var end = Int.min
-        for ws in visibleWeekStarts {
-            let r = snapshotForWeek(ws).timeRange
-            start = min(start, r.start)
-            end = max(end, r.end)
-        }
-        unifiedTimeRange = (start == Int.max ? 9 : start, end == Int.min ? 24 : end)
+        return (earliest, latest)
     }
 
     var body: some View {
@@ -109,7 +132,7 @@ struct WeekTimelineView: View {
             // Wrap in a clipping container so the time axis doesn't bleed up into
             // the headers above when the user is scrolled far down.
             GeometryReader { _ in
-                TimeAxisColumn(timeRange: unifiedTimeRange, hourHeight: hourHeight)
+                TimeAxisColumn(timeRange: globalTimeRange, hourHeight: hourHeight)
                     .offset(y: -trackedScrollOffset)
                     .frame(maxHeight: .infinity, alignment: .top)
             }
@@ -175,6 +198,7 @@ struct WeekTimelineView: View {
 
                     WeekContentView(
                         snapshot: snap,
+                        weekWidth: geoWidth,
                         hourHeight: hourHeight,
                         onBlockTap: { ctx in previewingContext = ctx },
                         pendingScrollAnchor: pendingScrollRequest?.week == weekStart
@@ -260,12 +284,25 @@ struct WeekTimelineView: View {
 
     private func snapshotForWeek(_ weekStart: Date) -> WeekSnapshot {
         if let cached = snapshotCache[weekStart] { return cached }
-        let snap = WeekSnapshot.build(weekStart: weekStart, lessons: lessons)
+        // Force every snapshot to use the SAME globalTimeRange so block y-positions
+        // align with the sticky TimeAxisColumn (which also uses globalTimeRange).
+        // Without this, weeks with different earliest hours would each have their
+        // own coordinate system, causing blocks to render up to 1+ hour above their
+        // matching time label.
+        let snap = WeekSnapshot.build(
+            weekStart: weekStart,
+            lessons: lessons,
+            forcedTimeRange: globalTimeRange
+        )
         snapshotCache[weekStart] = snap
         return snap
     }
 
-    private func recenterVisibleWeeks(around target: Date, radius: Int = 2) {
+    private func recenterVisibleWeeks(around target: Date, radius: Int = 1) {
+        // Radius 1 (3 total pages: prev/current/next) instead of 2 (5 pages) —
+        // TabView.page only renders ±1 anyway, but with radius 2 the ForEach was
+        // still evaluating 5 weeks' worth of view bodies on every state change.
+        // Halving the page count noticeably reduces horizontal-swipe stutter.
         let cal = DateHelper.calendar
         visibleWeekStarts = (-radius...radius).compactMap {
             cal.date(byAdding: .weekOfYear, value: $0, to: target)

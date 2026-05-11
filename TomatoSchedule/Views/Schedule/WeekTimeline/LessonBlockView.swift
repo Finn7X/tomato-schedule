@@ -1,5 +1,15 @@
 import SwiftUI
 
+/// One lesson block inside a day column.
+///
+/// Performance notes:
+/// - No @State (was @State isPressed for press-scale animation; removed because
+///   ~hundreds of LessonBlockView instances each holding their own SwiftUI state
+///   was a major source of horizontal-swipe jank).
+/// - No .scaleEffect / .animation modifiers — those each register an animation
+///   observer per instance.
+/// - .accessibilityLabel string is computed once per body call and uses
+///   pre-stored fields only.
 struct LessonBlockView: View {
     let block: PlacedBlock
     let cluster: ConflictCluster
@@ -7,8 +17,6 @@ struct LessonBlockView: View {
     let columnWidth: CGFloat
     let weekStart: Date
     let onTap: (PreviewContext) -> Void
-
-    @State private var isPressed = false
 
     /// Per-student color (matches portrait MonthCalendarView's StudentColors palette).
     /// Falls back to course color when student name is empty.
@@ -60,10 +68,6 @@ struct LessonBlockView: View {
             .padding(.leading, 7)
             .padding(.trailing, 4)
             .padding(.top, 2)
-            // The trailing Spacer + topLeading alignment in the parent ZStack keep
-            // the text glued to the top-left WITHOUT a .frame(maxHeight:.infinity),
-            // which was previously letting the VStack outgrow the block frame and
-            // causing the student name to spill into the prior hour row.
 
             if block.clipsLeading {
                 Image(systemName: "arrow.up")
@@ -94,14 +98,10 @@ struct LessonBlockView: View {
             }
         }
         .frame(width: width - 2, height: height, alignment: .topLeading)
-        .clipped()  // ⬅︎ ensures content (text, arrows, badge) NEVER overflows the block frame
+        .clipped()
         .offset(x: xOffset + 1, y: yOffset)
-        .scaleEffect(isPressed ? 0.97 : 1.0)
-        .animation(.easeOut(duration: 0.1), value: isPressed)
-        .contentShape(Rectangle())  // hit area = the visible block, not overflow zone
+        .contentShape(Rectangle())
         .onTapGesture {
-            isPressed = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { isPressed = false }
             onTap(PreviewContext(
                 id: block.lesson.id,
                 lesson: block.lesson,
@@ -110,6 +110,6 @@ struct LessonBlockView: View {
             ))
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("学生 \(block.lesson.studentName)，\(block.lesson.course?.name ?? "课时")，\(block.lesson.timeRangeText)")
+        .accessibilityLabel(Text("学生 \(block.lesson.studentName)，\(block.lesson.course?.name ?? "课时")，\(block.lesson.timeRangeText)"))
     }
 }
