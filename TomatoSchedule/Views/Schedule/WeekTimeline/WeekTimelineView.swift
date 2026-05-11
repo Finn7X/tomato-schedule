@@ -15,6 +15,13 @@ struct WeekTimelineView: View {
     @State private var hourHeight: CGFloat = 60
     @State private var trackedScrollOffset: CGFloat = 0
 
+    // Cached unified metrics — recomputed ONLY when visibleWeekStarts or lessons change.
+    // These were previously computed properties evaluated on every body re-render,
+    // which during scroll (60fps trackedScrollOffset writes) caused thousands of array
+    // allocations / sorts per second across 5 visible weeks × 7 days each.
+    @State private var unifiedAllDayHeight: CGFloat = WeekAllDayMetrics.minHeight
+    @State private var unifiedTimeRange: (start: Int, end: Int) = (9, 24)
+
     init(focusDate: Binding<Date>, lessons: [Lesson], onDismiss: @escaping () -> Void) {
         self._focusDate = focusDate
         self.lessons = lessons
@@ -23,15 +30,15 @@ struct WeekTimelineView: View {
         self._currentWeekStart = State(initialValue: ws)
     }
 
-    private var unifiedAllDayHeight: CGFloat {
-        WeekAllDayMetrics.unifiedHeight(
-            across: visibleWeekStarts.map { snapshotForWeek($0).days }
-        )
-    }
+    /// Recompute the cached unified metrics. Call only when the underlying data
+    /// (visibleWeekStarts or the lesson list) changes — NOT on every render.
+    private func recomputeUnifiedMetrics() {
+        let perWeekDays = visibleWeekStarts.map { snapshotForWeek($0).days }
+        unifiedAllDayHeight = WeekAllDayMetrics.unifiedHeight(across: perWeekDays)
 
-    private var unifiedTimeRange: (start: Int, end: Int) {
-        guard !visibleWeekStarts.isEmpty else {
-            return snapshotForWeek(currentWeekStart).timeRange
+        if visibleWeekStarts.isEmpty {
+            unifiedTimeRange = snapshotForWeek(currentWeekStart).timeRange
+            return
         }
         var start = Int.max
         var end = Int.min
@@ -40,7 +47,7 @@ struct WeekTimelineView: View {
             start = min(start, r.start)
             end = max(end, r.end)
         }
-        return (start == Int.max ? 9 : start, end == Int.min ? 24 : end)
+        unifiedTimeRange = (start == Int.max ? 9 : start, end == Int.min ? 24 : end)
     }
 
     var body: some View {
@@ -58,15 +65,23 @@ struct WeekTimelineView: View {
                 computeHourHeight(landscapeHeight: geo.size.height)
                 recenterVisibleWeeks(around: currentWeekStart)
                 setInitialScroll()
+                recomputeUnifiedMetrics()
             }
             .onChange(of: currentWeekStart) { _, newStart in
                 previewingContext = nil
                 updateFocusDateForWeekChange(newStart)
                 extendVisibleWeeksIfNeeded(current: newStart)
+                // unified metrics recompute is triggered by the visibleWeekStarts
+                // .onChange below if extension actually added a week; no need to
+                // recompute on every swipe.
                 UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.6)
+            }
+            .onChange(of: visibleWeekStarts) { _, _ in
+                recomputeUnifiedMetrics()
             }
             .onChange(of: lessons.count) { _, _ in
                 snapshotCache.removeAll()
+                recomputeUnifiedMetrics()
             }
             .sheet(item: $previewingContext) { ctx in
                 LessonInfoCard(lesson: ctx.lesson, overflowCompanions: ctx.overflowCompanions)

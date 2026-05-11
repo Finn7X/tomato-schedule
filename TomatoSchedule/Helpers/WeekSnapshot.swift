@@ -46,12 +46,9 @@ struct DayColumn: Identifiable {
     let clusters: [ConflictCluster]
 
     /// Flat list of all lessons on this day (visible + overflow), sorted by start time.
-    /// Used by WeekAllDayRow to show daily summaries.
-    var allLessons: [Lesson] {
-        clusters
-            .flatMap { $0.visibleBlocks.map(\.lesson) + $0.overflowLessons }
-            .sorted { $0.startTime < $1.startTime }
-    }
+    /// **Stored**, computed once in WeekSnapshot.build to avoid per-access allocation
+    /// during scrolling. Used by WeekAllDayRow to show daily summaries.
+    let allLessons: [Lesson]
 }
 
 // MARK: - WeekSnapshot (two-pass builder)
@@ -106,12 +103,19 @@ struct WeekSnapshot {
                 dayRange: finalRange,
                 dayEnd: dayEnd
             )
+            // Pre-compute the day's flat lesson list ONCE here so hot-path consumers
+            // (WeekAllDayPillsInline, unified height calc) don't re-allocate per access
+            // during scroll.
+            let allLessons = clusters
+                .flatMap { $0.visibleBlocks.map(\.lesson) + $0.overflowLessons }
+                .sorted { $0.startTime < $1.startTime }
             return DayColumn(
                 id: startOfDay,
                 date: startOfDay,
                 isToday: DateHelper.isSameDay(startOfDay, today),
                 isWeekend: isWeekend,
-                clusters: clusters
+                clusters: clusters,
+                allLessons: allLessons
             )
         }
 

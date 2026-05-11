@@ -54,12 +54,16 @@ struct LessonBlockView: View {
                         .foregroundStyle(blockColor.opacity(0.72))
                         .lineLimit(1)
                 }
+
+                Spacer(minLength: 0)
             }
             .padding(.leading, 7)
             .padding(.trailing, 4)
             .padding(.top, 2)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .fixedSize(horizontal: false, vertical: false)
+            // The trailing Spacer + topLeading alignment in the parent ZStack keep
+            // the text glued to the top-left WITHOUT a .frame(maxHeight:.infinity),
+            // which was previously letting the VStack outgrow the block frame and
+            // causing the student name to spill into the prior hour row.
 
             if block.clipsLeading {
                 Image(systemName: "arrow.up")
