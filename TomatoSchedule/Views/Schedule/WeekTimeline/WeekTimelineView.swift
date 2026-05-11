@@ -1,5 +1,13 @@
 import SwiftUI
 
+/// Reference-typed snapshot cache. Held in @State as a CLASS so that mutations
+/// to its internal dictionary do NOT count as @State writes — body can populate
+/// it on cache miss without triggering SwiftUI's "Modifying state during view
+/// update" undefined behavior.
+final class WeekSnapshotStore {
+    var cache: [Date: WeekSnapshot] = [:]
+}
+
 struct WeekTimelineView: View {
     @Binding var focusDate: Date
     let lessons: [Lesson]
@@ -7,7 +15,7 @@ struct WeekTimelineView: View {
 
     @Environment(\.verticalSizeClass) private var vSize
     @State private var currentWeekStart: Date
-    @State private var snapshotCache: [Date: WeekSnapshot] = [:]
+    @State private var snapshotStore = WeekSnapshotStore()
     @State private var scrollAnchorByWeek: [Date: ScrollAnchor] = [:]
     @State private var pendingScrollRequest: (week: Date, anchor: ScrollAnchor)?
     @State private var previewingContext: PreviewContext?
@@ -45,7 +53,7 @@ struct WeekTimelineView: View {
         let newRange = scanGlobalTimeRange()
         if newRange != globalTimeRange {
             globalTimeRange = newRange
-            snapshotCache.removeAll()
+            snapshotStore.cache.removeAll()
         }
 
         let perWeekDays = visibleWeekStarts.map { snapshotForWeek($0).days }
@@ -103,7 +111,7 @@ struct WeekTimelineView: View {
                 recomputeUnifiedMetrics()
             }
             .onChange(of: lessons.count) { _, _ in
-                snapshotCache.removeAll()
+                snapshotStore.cache.removeAll()
                 recomputeUnifiedMetrics()
             }
             .sheet(item: $previewingContext) { ctx in
@@ -283,18 +291,17 @@ struct WeekTimelineView: View {
     }
 
     private func snapshotForWeek(_ weekStart: Date) -> WeekSnapshot {
-        if let cached = snapshotCache[weekStart] { return cached }
+        if let cached = snapshotStore.cache[weekStart] { return cached }
         // Force every snapshot to use the SAME globalTimeRange so block y-positions
         // align with the sticky TimeAxisColumn (which also uses globalTimeRange).
-        // Without this, weeks with different earliest hours would each have their
-        // own coordinate system, causing blocks to render up to 1+ hour above their
-        // matching time label.
         let snap = WeekSnapshot.build(
             weekStart: weekStart,
             lessons: lessons,
             forcedTimeRange: globalTimeRange
         )
-        snapshotCache[weekStart] = snap
+        // Class-internal mutation — does NOT trigger view update (snapshotStore is
+        // a class reference held in @State; only re-assigning the reference would).
+        snapshotStore.cache[weekStart] = snap
         return snap
     }
 

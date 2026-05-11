@@ -1,15 +1,6 @@
 import SwiftUI
 
 /// One lesson block inside a day column.
-///
-/// Performance notes:
-/// - No @State (was @State isPressed for press-scale animation; removed because
-///   ~hundreds of LessonBlockView instances each holding their own SwiftUI state
-///   was a major source of horizontal-swipe jank).
-/// - No .scaleEffect / .animation modifiers — those each register an animation
-///   observer per instance.
-/// - .accessibilityLabel string is computed once per body call and uses
-///   pre-stored fields only.
 struct LessonBlockView: View {
     let block: PlacedBlock
     let cluster: ConflictCluster
@@ -41,14 +32,24 @@ struct LessonBlockView: View {
         let width = columnWidth / CGFloat(cluster.laneCount)
         let xOffset = width * CGFloat(block.lane)
 
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(blockColor.opacity(fillOpacity))
+        let shape = RoundedRectangle(cornerRadius: 4)
 
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(blockColor)
-                .frame(width: 3)
+        return ZStack(alignment: .topLeading) {
+            // Background fill
+            shape.fill(blockColor.opacity(fillOpacity))
 
+            // Left accent bar (no rounded corners — fills full height inside the clip)
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(blockColor)
+                    .frame(width: 3)
+                Spacer(minLength: 0)
+            }
+
+            // Text content — natural-size VStack pinned at top-leading.
+            // Use .fixedSize(vertical: true) so the VStack uses its natural height
+            // rather than expanding via a Spacer; combined with the outer .clipShape
+            // this guarantees the text is rendered strictly inside the block frame.
             VStack(alignment: .leading, spacing: 1) {
                 Text(block.lesson.studentName.isEmpty ? "无学生" : block.lesson.studentName)
                     .font(.system(size: height < 30 ? 10 : 11, weight: .semibold))
@@ -62,12 +63,12 @@ struct LessonBlockView: View {
                         .foregroundStyle(blockColor.opacity(0.72))
                         .lineLimit(1)
                 }
-
-                Spacer(minLength: 0)
             }
+            .fixedSize(horizontal: false, vertical: true)
+            .dynamicTypeSize(...DynamicTypeSize.large)   // cap accessibility scaling
             .padding(.leading, 7)
             .padding(.trailing, 4)
-            .padding(.top, 2)
+            .padding(.top, 3)
 
             if block.clipsLeading {
                 Image(systemName: "arrow.up")
@@ -98,7 +99,10 @@ struct LessonBlockView: View {
             }
         }
         .frame(width: width - 2, height: height, alignment: .topLeading)
-        .clipped()
+        // Use clipShape with an explicit shape instead of .clipped() — the latter
+        // proved unreliable when combined with .offset and a VStack containing a
+        // Spacer, occasionally letting text render above the block frame.
+        .clipShape(shape)
         .offset(x: xOffset + 1, y: yOffset)
         .contentShape(Rectangle())
         .onTapGesture {
