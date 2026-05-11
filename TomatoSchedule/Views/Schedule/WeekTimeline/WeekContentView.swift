@@ -18,6 +18,10 @@ struct WeekContentView: View {
     var body: some View {
         GeometryReader { geo in
             let columnWidth = max((geo.size.width - 48) / 7, 0)
+            // Add bottom buffer so the LAST hour line can scroll to the top of the
+            // visible area (matches Apple Calendar). Buffer = visible - hourHeight.
+            let visibleHeight = max(geo.size.height, 100)
+            let scrollContentHeight = contentHeight + max(0, visibleHeight - hourHeight)
             ScrollViewReader { reader in
                 ScrollView(.vertical, showsIndicators: true) {
                     ZStack(alignment: .topLeading) {
@@ -29,7 +33,7 @@ struct WeekContentView: View {
 
                         nowIndicatorLayer
                     }
-                    .frame(width: geo.size.width, height: contentHeight)
+                    .frame(width: geo.size.width, height: scrollContentHeight, alignment: .top)
                     .background(scrollOffsetTracker)
                 }
                 .onAppear {
